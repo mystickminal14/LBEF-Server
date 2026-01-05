@@ -1,0 +1,347 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "rhel-openssl-1.1.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum EUserRole {
+  ADMIN
+  SUPERADMIN
+  MANAGER
+}
+
+enum EShift {
+  MORNING
+  EVENING
+  BOTH
+}
+
+enum EDepartment {
+  MANAGEMENT
+  ADMINISTRATION
+  COMPUTING
+}
+
+enum EIntakeStatus {
+  OPEN
+  CLOSED
+}
+
+enum BlockType {
+  HEADING
+  SUBHEADING
+  PARAGRAPH
+  LIST
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  fullname  String
+  username  String    @unique
+  email     String
+  role      EUserRole
+  password  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@fulltext([fullname, username])
+}
+
+model Course {
+  id        Int                 @id @default(autoincrement())
+  title     String              @unique
+  shift     EShift
+  duration  String?
+  category  String?
+  details   String? @db.VarChar(500)
+  prefix    String?
+  degree    String?
+  semester  String?
+  credit    String
+  image     String?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  blocks    CourseDetailBlock[]
+
+  @@fulltext([title, category])
+}
+
+enum EHOLIDAYTYPE {
+  ACADEMIC
+  ADMINISTRATIVE
+}
+
+model CourseDetailBlock {
+  id       Int    @id @default(autoincrement())
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId Int
+
+  parentId Int?
+  parent   CourseDetailBlock?  @relation("BlockHierarchy", fields: [parentId], references: [id])
+  children CourseDetailBlock[] @relation("BlockHierarchy")
+
+  title   String?
+  content String?   @db.VarChar(10000)
+  type    BlockType
+
+  order Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model News {
+  id            Int      @id @default(autoincrement())
+  image         String?
+  title         String
+  publishedOn   String?
+  publishedOnBS String?
+  link          String   @unique
+  source        String
+  content       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Alumni {
+  id        Int      @id @default(autoincrement())
+  name      String
+  batch     String
+  link      String?
+  position  String?
+  course    String
+  story     String?  @db.VarChar(1000)
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@fulltext([name, course])
+}
+
+model Recognition {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model OurTeam {
+  id         Int         @id @default(autoincrement())
+  name       String
+  position   String
+  department EDepartment
+  image      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@fulltext([name, position])
+}
+enum EHonoraryPosition {
+  CHIEF_PATRON
+  PATRON
+  EDITOR_IN_CHIEF
+  ASSOCIATE_EDITOR
+  MANAGING_EDITOR
+  EDITORIAL_BOARD_MEMBER
+  ADVISOR
+}
+
+model EditorialBoard {
+  id               Int               @id @default(autoincrement())
+  name             String
+  designation      String       
+  honoraryPosition EHonoraryPosition
+  department       String
+  institution      String
+  country          String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@fulltext([name, designation, institution])
+}
+
+model holiday {
+  id        Int          @id @default(autoincrement())
+  image     String
+  type      EHOLIDAYTYPE @unique @default(ADMINISTRATIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model downloads {
+  id        Int      @id @default(autoincrement())
+  file      String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@fulltext([name])
+}
+
+model contact {
+  id         Int    @id @default(autoincrement())
+  purpose    String
+  name       String
+  department String
+  email      String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@fulltext([name, email, department, purpose])
+}
+
+model achievement {
+  id         Int      @id @default(autoincrement())
+  achivement String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model notice {
+  id           Int          @id @default(autoincrement())
+  program_name String
+  date         String
+  title        String
+  file         String?
+  type         EHOLIDAYTYPE
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model AdmissionIntake {
+  id        Int           @id @default(autoincrement())
+  status    EIntakeStatus
+  intake    String
+  duration  String
+  lastdate  String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+enum PlannerType {
+  PARENT
+  CHILD
+}
+
+model AcademicPlanner {
+  id Int @id @default(autoincrement())
+
+  type PlannerType
+
+  parentId Int?
+  parent   AcademicPlanner?  @relation("BlockHierarchy", fields: [parentId], references: [id])
+  children AcademicPlanner[] @relation("BlockHierarchy")
+  year String?
+  semester String?
+  course   String?
+  intake   String?
+  file     String?
+  session String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+}
+
+model FeePlanner {
+  id Int @id @default(autoincrement())
+
+  type PlannerType
+  year String?
+
+  parentId Int?
+  parent   FeePlanner?  @relation("BlockHierarchy", fields: [parentId], references: [id])
+  children FeePlanner[] @relation("BlockHierarchy")
+
+  semester String?
+  course   String?
+  session  String?
+  file     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+}
+
+model PhotoGallery {
+  id        Int      @id @default(autoincrement())
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LbefConnect {
+  id        Int      @id @default(autoincrement())
+  volume    String?
+  duration  String?
+  issue     String?
+  image     String?
+  file      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum EDegree {
+  MASTER
+  BACHELOR
+}
+
+model Documents {
+  id        Int      @id @default(autoincrement())
+  document  String
+  type      EDegree  @default(BACHELOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Journal {
+  id        Int      @id @default(autoincrement())
+  volume    String?
+  issue     String?
+  year      String?
+  month     String?
+  type PlannerType
+
+  parentId Int?
+  parent   Journal?  @relation("BlockHierarchy", fields: [parentId], references: [id])
+  children Journal[] @relation("BlockHierarchy")
+  details  JournalDetails[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model JournalDetails {
+  id        Int      @id @default(autoincrement())
+  title     String?
+  authors   String?
+  pages     String?
+  subject   String?
+  country   String?
+  pageNo    String?
+  link      String?
+  abstract  String?  @db.VarChar(1000)
+  availableOnline DateTime?
+  keywords  String?
+  journal   Journal @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  journalId Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@fulltext([title])
+}

@@ -1,0 +1,46 @@
+import { Router } from "express";
+import authRoutes from "./auth.routes";
+import userRoute from "../api/users/users.route";
+import courseRouter from "../api/course/course.routes";
+import newsRouter from "../api/news/news.route";
+import alumniRouter from "../api/alumni/alumni.route";
+import recognitionRouter from './../api/recognitions/recognitions.route';
+import teamRouter from "../api/teams/team.route";
+import holdayRouter from "../api/holiday/holidat.route";
+import downloadRouter from "../api/downloads/downloads.route";
+import noticeRouter from "../api/notice/notice.route";
+import intakeRoute from "../api/intake-calender/intake.route";
+import { plannerRouter } from "../api/academic-planner/planner.routes";
+import contactRoute from "../api/contact/contact.route";
+import { feePlannerRouter } from "../api/fee-planner/fee.planner.routes";
+import achievementRoute from "../api/achievement/achievement.route";
+import galleryRouter from "../api/media/gallery.route";
+import connectRouter from "../api/connect/connect.routes";
+import documentRouter from "../api/documents/document.route";
+import { journalRouter } from "../api/journal/journal.route";
+import editorialRouter from "../api/editorial-board/editorial.route";
+
+const rootRouter: Router = Router();
+rootRouter.use("/auth", authRoutes);
+rootRouter.use("/users", userRoute);
+rootRouter.use("/courses", courseRouter);
+rootRouter.use("/news", newsRouter);
+rootRouter.use("/alumni", alumniRouter);
+rootRouter.use("/recognition", recognitionRouter);
+rootRouter.use("/teams", teamRouter);
+rootRouter.use("/holiday", holdayRouter);
+rootRouter.use("/downloads", downloadRouter);
+rootRouter.use("/notice", noticeRouter);
+rootRouter.use("/intake", intakeRoute);
+rootRouter.use("/planner", plannerRouter);
+rootRouter.use("/gallery", galleryRouter);
+rootRouter.use("/connect", connectRouter);
+rootRouter.use("/fee-planner", feePlannerRouter);
+rootRouter.use("/achivement", achievementRoute);
+rootRouter.use("/contact", contactRoute);
+rootRouter.use("/docs", documentRouter);
+rootRouter.use("/journal", journalRouter);
+rootRouter.use("/editorial", editorialRouter);
+
+
+export default rootRouter;
