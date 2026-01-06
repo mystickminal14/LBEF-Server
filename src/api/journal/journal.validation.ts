@@ -1,14 +1,10 @@
 import { z } from "zod";
-export const CreatePrentIssueSchema = z.object({
-  issue: z.string("Issue is required").min(1, "Issue is required"),
-  year: z.string("Year is required"),
 
-});
-
-export const CreateJournalIssueSchema = z.object({
-  volume: z.string("Volume is required").min(1, "Volume is required"),
-  month: z.string("Month is required"),
-  parentId: z.number("Parent ID is required"),
+export const JournalSchema = z.object({
+  year: z.string().min(1, "Year is required"),
+  month: z.string().min(1, "Month is required"),
+  issue: z.string().min(1, "Issue is required"),
+  volume: z.string().min(1, "Volume is required"),
 });
 
 export const CreateJournalDetailsSchema = z.object({

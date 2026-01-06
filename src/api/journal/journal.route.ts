@@ -1,19 +1,21 @@
 import { Router } from "express";
 import { uploadPDF } from "../../middleware/pdf.middleware";
 import verifyJwt from "../../middleware/auth.middleware";
-import { createIssue, createJournalIssue, deleteChild, deleteParentWithChildren, editJournalIssue, editParentJournal, getjournal, getjournalChild, getParentsWithChildren } from "./journal.controller";
+import {
+  createJournal,
+  editJournal,
+  deleteJournal,
+  getJournalsGroupedByYear,
+  getAllJournals,
+} from "./journal.controller";
 import { createJournalDetails, deleteJournalDetails, editJournalDetails, getJournalDetailsByJournalId, uploadFile } from "./journal-details.controller";
 
 export const journalRouter: Router = Router();
-journalRouter.get("/",  getjournal);
-journalRouter.get("/child/:id",  getjournalChild);
-journalRouter.post("/", [verifyJwt],  createIssue);
-journalRouter.post("/:id", [verifyJwt], createJournalIssue);
-journalRouter.delete("/child/:id", [verifyJwt], deleteChild);
-journalRouter.delete("/:id", [verifyJwt], deleteParentWithChildren);
-journalRouter.put("/:id", [verifyJwt], editParentJournal);
-journalRouter.put("/child/:id", [verifyJwt], editJournalIssue);
-journalRouter.get("/all",getParentsWithChildren);
+journalRouter.post("/", verifyJwt,  [verifyJwt],createJournal);
+journalRouter.put("/:id", verifyJwt, [verifyJwt], editJournal);
+journalRouter.delete("/:id", verifyJwt,  [verifyJwt],deleteJournal);
+journalRouter.get("/", getAllJournals);                 
+journalRouter.get("/grouped/year", getJournalsGroupedByYear);
 
 journalRouter.post("/details/:id",  createJournalDetails);
 journalRouter.get("/details/:id", getJournalDetailsByJournalId);

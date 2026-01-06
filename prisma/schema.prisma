@@ -311,15 +311,10 @@ model Documents {
 
 model Journal {
   id        Int      @id @default(autoincrement())
-  volume    String?
-  issue     String?
-  year      String?
-  month     String?
-  type PlannerType
-
-  parentId Int?
-  parent   Journal?  @relation("BlockHierarchy", fields: [parentId], references: [id])
-  children Journal[] @relation("BlockHierarchy")
+  volume    String
+  issue     String
+  year      String
+  month     String
   details  JournalDetails[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
