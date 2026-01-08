@@ -6,22 +6,25 @@ import { ApiResponse } from "../../utils/apiResponse";
 import { deleteCourseImage } from "../../utils/deleteImage";
 import { paginationSchema } from "../../validation/pagination.validation";
 
-
 const create = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.files || !(req.files as Express.Multer.File[]).length) {
+    throw new ApiError(400, "No image files provided");
+  }
 
-  if (!req.file) throw new ApiError(400, "No image file provided");
-  const filename = req.file.filename;
-  const imageUrl = `/public/gallery/${filename}`;
+  const files = req.files as Express.Multer.File[];
 
-  const image = await prismaClient.photoGallery.create({
-    data: { image: imageUrl },
+  const imagesData = files.map((file) => ({
+    image: `/public/gallery/${file.filename}`,
+  }));
+
+  const images = await prismaClient.photoGallery.createMany({
+    data: imagesData,
   });
 
   res
     .status(201)
-    .json(new ApiResponse(201, image, "image created successfully"));
+    .json(new ApiResponse(201, images, "Images uploaded successfully"));
 });
-
 const getData = asyncHandler(async (req: Request, res: Response) => {
    const parsed = paginationSchema.safeParse(req.query);
  

@@ -44,7 +44,6 @@ const edit = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const getTeam = asyncHandler(async (req: Request, res: Response) => {
-  // Validate pagination
   const parsedPagination = paginationSchema.safeParse(req.query);
   if (!parsedPagination.success) {
     throw new ApiError(400, "Validation Failed", parsedPagination.error.issues);
@@ -123,33 +122,53 @@ const getTeamsByDepartment = asyncHandler(async (req: Request, res: Response) =>
   );
 });
 
-const uoloadTeam = asyncHandler(async (req: Request, res: Response) => {
-  const id = req.params.id;
+const uploadTeamImages = asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id);
 
-  if (!req.file) throw new ApiError(400, "No image file provided");
+  if (!req.files || typeof req.files !== "object") {
+    throw new ApiError(400, "No files uploaded");
+  }
 
-  const filename = req.file.filename;
-  const imageUrl = `/public/teams/${filename}`;
+  const files = req.files as {
+    image?: Express.Multer.File[];
+    portrait?: Express.Multer.File[];
+  };
+
+  const imageFile = files.image?.[0];
+  const portraitFile = files.portrait?.[0];
+
+  if (!imageFile && !portraitFile) {
+    throw new ApiError(400, "Image or portrait is required");
+  }
 
   const team = await prismaClient.ourTeam.findUnique({
-    where: { id: parseInt(id) },
+    where: { id },
   });
-
-  if (team?.image) {
-    throw new ApiError(400, "Image already exists");
-  }
 
   if (!team) throw new ApiError(404, "Team not found");
 
-  const updatedteam = await prismaClient.ourTeam.update({
-    where: { id: parseInt(id) },
-    data: { image: imageUrl },
+  const updateData: any = {};
+
+  if (imageFile) {
+    if (team.image) deleteCourseImage(team.image);
+    updateData.image = `/public/teams/${imageFile.filename}`;
+  }
+
+  if (portraitFile) {
+    if (team.portrait) deleteCourseImage(team.portrait);
+    updateData.portrait = `/public/teams/${portraitFile.filename}`;
+  }
+
+  const updatedTeam = await prismaClient.ourTeam.update({
+    where: { id },
+    data: updateData,
   });
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, updatedteam, "Avatar uploaded successfully"));
+  return res.status(200).json(
+    new ApiResponse(200, updatedTeam, "Team images uploaded successfully")
+  );
 });
+
 
 const updateteamImage = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
@@ -178,16 +197,21 @@ const updateteamImage = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(200, updatedCourse, "Avatar updated successfully"));
 });
 const deleteTeam = asyncHandler(async (req: Request, res: Response) => {
-  const id = req.params.id;
+  const id = parseInt(req.params.id);
+
   const team = await prismaClient.ourTeam.findUnique({
-    where: { id: parseInt(id) },
+    where: { id },
   });
-  if (!team) throw new ApiError(404, "team not found");
-  if (team.image) {
-    deleteCourseImage(team.image);
-  }
-  await prismaClient.ourTeam.delete({ where: { id: parseInt(id) } });
-  res.status(200).json(new ApiResponse(200, null, "team deleted successfully"));
+
+  if (!team) throw new ApiError(404, "Team not found");
+
+  if (team.image) deleteCourseImage(team.image);
+  if (team.portrait) deleteCourseImage(team.portrait);
+
+  await prismaClient.ourTeam.delete({ where: { id } });
+
+  res.status(200).json(new ApiResponse(200, null, "Team deleted successfully"));
 });
 
-export { add, uoloadTeam, edit, deleteTeam, updateteamImage, getTeam ,getTeamsByDepartment};
+
+export { add, uploadTeamImages, edit, deleteTeam, updateteamImage, getTeam ,getTeamsByDepartment};

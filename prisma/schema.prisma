@@ -142,10 +142,17 @@ model OurTeam {
   name       String
   position   String
   department EDepartment
+  bio     String?  @db.VarChar(1000)
   image      String?
+  portrait String?
+  facebook  String?
+  insta String?
+  phone String?
+  email String?
+  linkedIn String?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
-
+ 
   @@fulltext([name, position])
 }
 enum EHonoraryPosition {

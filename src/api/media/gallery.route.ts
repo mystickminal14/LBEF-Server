@@ -6,7 +6,7 @@ import { upload } from "../../middleware/multer.middleware";
 const galleryRouter: Router = Router();
 galleryRouter.get("/", getData);
 galleryRouter.get("/all",getAll);
-galleryRouter.post("/", [verifyJwt],upload.single("image"),create);
+galleryRouter.post("/", [verifyJwt], upload.array("images", 20), create);
 galleryRouter.delete("/:id", [verifyJwt],deleteImage);
 
 

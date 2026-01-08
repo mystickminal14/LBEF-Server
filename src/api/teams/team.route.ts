@@ -3,7 +3,7 @@ import verifyJwt from "../../middleware/auth.middleware";
 import { upload } from "../../middleware/multer.middleware";
 import {
   add,
-  uoloadTeam,
+  uploadTeamImages,
   edit,
   deleteTeam,
   updateteamImage,
@@ -18,7 +18,15 @@ teamRouter.get("/department", getTeamsByDepartment);
 teamRouter.post("/", [verifyJwt], add);
 teamRouter.put("/:id", [verifyJwt], edit);
 
-teamRouter.put("/upload/:id", [verifyJwt], upload.single("image"), uoloadTeam);
+teamRouter.put(
+  "/upload/:id",
+  [verifyJwt],
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "portrait", maxCount: 1 },
+  ]),
+  uploadTeamImages
+);
 teamRouter.put(
   "/update-image/:id",
   [verifyJwt],
