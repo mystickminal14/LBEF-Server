@@ -8,14 +8,15 @@ import {
   
 } from "./contact.controller";
 import verifyJwt from "../../middleware/auth.middleware";
-import adminMiddleware from "../../middleware/admin.middleware";
+import { requirePermission } from "../../middleware/permission.middleware";
+import { EPermission } from "../users/permisssion";
 
 const contactRoute: Router = express();
-contactRoute.get("/", [verifyJwt ], getContact);
+contactRoute.get("/", [verifyJwt,requirePermission(EPermission.CONTACT)], getContact);
 contactRoute.get("/all", getAll);
 
-contactRoute.post("/", [verifyJwt ], addContact);
-contactRoute.put("/:id", [verifyJwt, adminMiddleware], editUser);
-contactRoute.delete("/:id", [verifyJwt, adminMiddleware], deleteUser);
+contactRoute.post("/", [verifyJwt,requirePermission(EPermission.CONTACT)], addContact);
+contactRoute.put("/:id", [verifyJwt,requirePermission(EPermission.CONTACT)], editUser);
+contactRoute.delete("/:id", [verifyJwt,requirePermission(EPermission.CONTACT)], deleteUser);
 
 export default contactRoute;

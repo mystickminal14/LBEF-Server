@@ -14,7 +14,14 @@ const login = asyncHandler(async (req: Request, res: Response) => {
 
   if (!username || !password) throw new ApiError(400, "Username and password are required");
 
-  const user = await prismaClient.user.findUnique({ where: { username } });
+const user = await prismaClient.user.findUnique({
+    where: { username },
+    include: {
+      permissions: {
+        include: { permission: true },
+      },
+    },
+  });
   if (!user) throw new ApiError(400, "User not found");
 
   const isPasswordValid = await bcrypt.compare(password, user.password);

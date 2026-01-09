@@ -18,7 +18,34 @@ enum EUserRole {
   ADMIN
   SUPERADMIN
   MANAGER
+  USER
 }
+enum EPermission  {
+  USERS
+  COURSES
+  TEAMS
+  ALUMNI
+
+  NEWS
+  JOURNALS
+  EDITORIAL_BOARD
+  CONNECT
+  GALLERY
+
+  NOTICE
+  CONTACT
+  HOLIDAY
+  RECOGNITION
+  ACHIEVEMENT
+
+  INTAKE
+  DOCUMENTS
+
+  ACADEMIC_PLANNER
+  FEE_PLANNER
+  DOWNLOADS
+}
+
 
 enum EShift {
   MORNING
@@ -43,19 +70,40 @@ enum BlockType {
   PARAGRAPH
   LIST
 }
+model Permission {
+  id        Int          @id @default(autoincrement())
+  name      EPermission @unique
+  users     UserPermission[]
+  
+}
+model UserPermission {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  permissionId Int
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission  Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+}
+
 
 model User {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   fullname  String
-  username  String    @unique
+  username  String   @unique
   email     String
   role      EUserRole
   password  String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+
+  permissions UserPermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@fulltext([fullname, username])
 }
+
 
 model Course {
   id        Int                 @id @default(autoincrement())

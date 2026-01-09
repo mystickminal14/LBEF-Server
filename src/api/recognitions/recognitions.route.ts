@@ -9,26 +9,28 @@ import {
   updateRecognitionImage,
   getRecognition,
 } from "./recognitions.controller";
+import { requirePermission } from "../../middleware/permission.middleware";
+import { EPermission } from "../users/permisssion";
 
 const recognitionRouter: Router = Router();
-recognitionRouter.get("/", [verifyJwt], getRecognition);
+recognitionRouter.get("/", [verifyJwt ,requirePermission(EPermission.RECOGNITION)], getRecognition);
 recognitionRouter.get("/all",  getRecognition);
 
-recognitionRouter.post("/", [verifyJwt], add);
-recognitionRouter.put("/:id", [verifyJwt], edit);
+recognitionRouter.post("/", [verifyJwt,requirePermission(EPermission.RECOGNITION)], add);
+recognitionRouter.put("/:id", [verifyJwt,requirePermission(EPermission.RECOGNITION)], edit);
 
 recognitionRouter.put(
   "/upload/:id",
-  [verifyJwt],
+  [verifyJwt,requirePermission(EPermission.RECOGNITION)],
   upload.single("image"),
   uploadRecognition
 );
 recognitionRouter.put(
   "/update-image/:id",
-  [verifyJwt],
+  [verifyJwt,requirePermission(EPermission.RECOGNITION)],
   upload.single("image"),
   updateRecognitionImage
 );
-recognitionRouter.delete("/:id", [verifyJwt], deleteRecognition);
+recognitionRouter.delete("/:id", [verifyJwt,requirePermission(EPermission.RECOGNITION)], deleteRecognition);
 
 export default recognitionRouter;

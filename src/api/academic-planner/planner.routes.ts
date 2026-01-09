@@ -11,21 +11,23 @@ import {
   getParentWithChildren,
 } from "./planner.controller";
 import verifyJwt from "../../middleware/auth.middleware";
+import { requirePermission } from "../../middleware/permission.middleware";
+import { EPermission } from "../users/permisssion";
 
 export const plannerRouter: Router = Router();
 
 plannerRouter.put(
   "/files", 
-  [verifyJwt],
+  [verifyJwt,requirePermission(EPermission.ACADEMIC_PLANNER)],
   uploadPDF.array("files", 10),
   addMultipleFiles
 );
-plannerRouter.post("/", [verifyJwt], uploadPDF.single("files"), createSession);
+plannerRouter.post("/", [verifyJwt,requirePermission(EPermission.ACADEMIC_PLANNER)], uploadPDF.single("files"), createSession);
 
-plannerRouter.delete("/child/:id", [verifyJwt], deleteChild);
-plannerRouter.delete("/:id", [verifyJwt], deleteParentWithChildren);
-plannerRouter.put("/:id", [verifyJwt], editSession);
-plannerRouter.get("/", [verifyJwt], getParents);
-plannerRouter.get("/child/:id", [verifyJwt], getChildrenByParentId);
+plannerRouter.delete("/child/:id", [verifyJwt,requirePermission(EPermission.ACADEMIC_PLANNER)], deleteChild);
+plannerRouter.delete("/:id", [verifyJwt,requirePermission(EPermission.ACADEMIC_PLANNER)], deleteParentWithChildren);
+plannerRouter.put("/:id", [verifyJwt,requirePermission(EPermission.ACADEMIC_PLANNER)], editSession);
+plannerRouter.get("/", [verifyJwt,requirePermission(EPermission.ACADEMIC_PLANNER)], getParents);
+plannerRouter.get("/child/:id", [verifyJwt,requirePermission(EPermission.ACADEMIC_PLANNER)], getChildrenByParentId);
 
 plannerRouter.get("/all", getParentWithChildren);

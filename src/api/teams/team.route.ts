@@ -10,17 +10,19 @@ import {
   getTeam,
   getTeamsByDepartment,
 } from "./teams.controller";
+import { requirePermission } from "../../middleware/permission.middleware";
+import { EPermission } from "../users/permisssion";
 
 const teamRouter: Router = Router();
-teamRouter.get("/", [verifyJwt], getTeam);
+teamRouter.get("/", [verifyJwt, requirePermission(EPermission.TEAMS)], getTeam);
 teamRouter.get("/department", getTeamsByDepartment);
 
-teamRouter.post("/", [verifyJwt], add);
-teamRouter.put("/:id", [verifyJwt], edit);
+teamRouter.post("/", [verifyJwt, requirePermission(EPermission.TEAMS)], add);
+teamRouter.put("/:id", [verifyJwt, requirePermission(EPermission.TEAMS)], edit);
 
 teamRouter.put(
   "/upload/:id",
-  [verifyJwt],
+  [verifyJwt, requirePermission(EPermission.TEAMS)],
   upload.fields([
     { name: "image", maxCount: 1 },
     { name: "portrait", maxCount: 1 },
@@ -29,10 +31,10 @@ teamRouter.put(
 );
 teamRouter.put(
   "/update-image/:id",
-  [verifyJwt],
+  [verifyJwt, requirePermission(EPermission.TEAMS)],
   upload.single("image"),
   updateteamImage
 );
-teamRouter.delete("/:id", [verifyJwt], deleteTeam);
+teamRouter.delete("/:id", [verifyJwt, requirePermission(EPermission.TEAMS)], deleteTeam);
 
 export default teamRouter;
