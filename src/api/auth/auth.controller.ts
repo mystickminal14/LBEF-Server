@@ -22,6 +22,7 @@ const user = await prismaClient.user.findUnique({
       },
     },
   });
+  console.log(user);
   if (!user) throw new ApiError(400, "User not found");
 
   const isPasswordValid = await bcrypt.compare(password, user.password);

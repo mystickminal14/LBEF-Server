@@ -6,7 +6,7 @@ import { ApiError } from "../../utils/apiError";
 import { prismaClient } from "../../server";
 import { ApiResponse } from "../../utils/apiResponse";
 import { paginationSchema } from "../../validation/pagination.validation";
-import { EPermission } from "./permisssion";
+import { EPermission } from "@prisma/client";
 import { EUserRole } from "@prisma/client";
 
 const addUser = asyncHandler(async (req: Request, res: Response) => {
@@ -93,8 +93,11 @@ const editUser = asyncHandler(async (req: Request, res: Response) => {
 
   if (permissions) {
     permissionRecords = await prismaClient.permission.findMany({
-      where: { name: { in: permissions } },
-    });
+  where: {
+    name: { in: permissions }, // ✅ correct type now
+  },
+});
+
 
     if (permissionRecords.length !== permissions.length) {
       throw new ApiError(400, "Invalid permission detected");

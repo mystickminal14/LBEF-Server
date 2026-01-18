@@ -20,18 +20,20 @@ enum EUserRole {
   MANAGER
   USER
 }
-enum EPermission  {
+
+enum EPermission {
   USERS
   COURSES
   TEAMS
   ALUMNI
-
+  PLANNER_COURSE
   NEWS
+  ALMUNI_FORM
   JOURNALS
   EDITORIAL_BOARD
   CONNECT
   GALLERY
-
+  SCHOLARSHIP
   NOTICE
   CONTACT
   HOLIDAY
@@ -45,7 +47,6 @@ enum EPermission  {
   FEE_PLANNER
   DOWNLOADS
 }
-
 
 enum EShift {
   MORNING
@@ -64,37 +65,42 @@ enum EIntakeStatus {
   CLOSED
 }
 
+enum EStatus {
+  ENABLED
+  DISABLED
+}
+
 enum BlockType {
   HEADING
   SUBHEADING
   PARAGRAPH
   LIST
 }
+
 model Permission {
-  id        Int          @id @default(autoincrement())
-  name      EPermission @unique
-  users     UserPermission[]
-  
+  id    Int              @id @default(autoincrement())
+  name  EPermission      @unique
+  users UserPermission[]
 }
+
 model UserPermission {
-  id           Int        @id @default(autoincrement())
+  id           Int @id @default(autoincrement())
   userId       Int
   permissionId Int
 
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permission  Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, permissionId])
 }
 
-
 model User {
-  id        Int      @id @default(autoincrement())
-  fullname  String
-  username  String   @unique
-  email     String
-  role      EUserRole
-  password  String
+  id       Int       @id @default(autoincrement())
+  fullname String
+  username String    @unique
+  email    String
+  role     EUserRole
+  password String
 
   permissions UserPermission[]
 
@@ -104,14 +110,13 @@ model User {
   @@fulltext([fullname, username])
 }
 
-
 model Course {
   id        Int                 @id @default(autoincrement())
   title     String              @unique
   shift     EShift
   duration  String?
   category  String?
-  details   String? @db.VarChar(500)
+  details   String?             @db.VarChar(500)
   prefix    String?
   degree    String?
   semester  String?
@@ -190,19 +195,20 @@ model OurTeam {
   name       String
   position   String
   department EDepartment
-  bio     String?  @db.VarChar(1000)
+  bio        String?     @db.VarChar(1000)
   image      String?
-  portrait String?
-  facebook  String?
-  insta String?
-  phone String?
-  email String?
-  linkedIn String?
+  portrait   String?
+  facebook   String?
+  insta      String?
+  phone      String?
+  email      String?
+  linkedIn   String?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
- 
+
   @@fulltext([name, position])
 }
+
 enum EHonoraryPosition {
   CHIEF_PATRON
   PATRON
@@ -216,7 +222,7 @@ enum EHonoraryPosition {
 model EditorialBoard {
   id               Int               @id @default(autoincrement())
   name             String
-  designation      String       
+  designation      String
   honoraryPosition EHonoraryPosition
   department       String
   institution      String
@@ -246,14 +252,14 @@ model downloads {
 }
 
 model contact {
-  id         Int    @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   purpose    String
   name       String
   department String
-  email      String @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  email      String   @unique
+  status     EStatus  @default(ENABLED)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@fulltext([name, email, department, purpose])
 }
@@ -291,51 +297,88 @@ enum PlannerType {
   CHILD
 }
 
-model AcademicPlanner {
-  id Int @id @default(autoincrement())
+model PlannerCourse {
+  id   Int    @id @default(autoincrement())
+  name String @unique
 
-  type PlannerType
-
-  parentId Int?
-  parent   AcademicPlanner?  @relation("BlockHierarchy", fields: [parentId], references: [id])
-  children AcademicPlanner[] @relation("BlockHierarchy")
-  year String?
-  semester String?
-  course   String?
-  intake   String?
-  file     String?
-  session String?
+  academicYears AcademicPlanner[]
+  feeYears      FeePlanner[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
-  @@index([parentId])
+model AcademicYear {
+  id      Int    @id @default(autoincrement())
+  year    String
+  session String
+
+  planners AcademicPlanner[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AcademicPlanner {
+  id              Int     @id @default(autoincrement())
+  semester        String
+  intake          String
+  file            String?
+  academicYearId  Int
+  plannerCourseId Int?
+
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  plannerCourse PlannerCourse? @relation(fields: [plannerCourseId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FeeYear {
+  id      Int     @id @default(autoincrement())
+  year    String
+  session String?
+
+  feePlanners FeePlanner[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model FeePlanner {
-  id Int @id @default(autoincrement())
+  id              Int            @id @default(autoincrement())
+  semester        String?
+  file            String?
+  course          String?
+  feeYearId       Int
+  feeYear         FeeYear        @relation(fields: [feeYearId], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  plannerCourse   PlannerCourse? @relation(fields: [plannerCourseId], references: [id])
+  plannerCourseId Int?
+  @@index([feeYearId])
+}
 
-  type PlannerType
-  year String?
+model GalleryType {
+  id        Int            @id @default(autoincrement())
+  name      String         @unique
+  slug      String         @unique
+  galleries PhotoGallery[]
+  status    EStatus        @default(ENABLED)
+  createdAt DateTime       @default(now())
 
-  parentId Int?
-  parent   FeePlanner?  @relation("BlockHierarchy", fields: [parentId], references: [id])
-  children FeePlanner[] @relation("BlockHierarchy")
-
-  semester String?
-  course   String?
-  session  String?
-  file     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([parentId])
+  @@fulltext([name])
 }
 
 model PhotoGallery {
-  id        Int      @id @default(autoincrement())
-  image     String?
+  id     Int         @id @default(autoincrement())
+  typeId Int
+  type   GalleryType @relation(fields: [typeId], references: [id], onDelete: Cascade)
+
+  image String?
+  link  String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -365,33 +408,79 @@ model Documents {
 }
 
 model Journal {
-  id        Int      @id @default(autoincrement())
+  id        Int              @id @default(autoincrement())
   volume    String
   issue     String
   year      String
   month     String
-  details  JournalDetails[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  details   JournalDetails[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 }
 
 model JournalDetails {
-  id        Int      @id @default(autoincrement())
-  title     String?
-  authors   String?
-  pages     String?
-  subject   String?
-  country   String?
-  pageNo    String?
-  link      String?
-  abstract  String?  @db.VarChar(1000)
+  id              Int       @id @default(autoincrement())
+  title           String?
+  authors         String?
+  pages           String?
+  subject         String?
+  country         String?
+  pageNo          String?
+  link            String?
+  abstract        String?   @db.VarChar(1000)
   availableOnline DateTime?
-  keywords  String?
-  journal   Journal @relation(fields: [journalId], references: [id], onDelete: Cascade)
-  journalId Int
+  keywords        String?
+  journal         Journal   @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  journalId       Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@fulltext([title])
+}
+
+enum EStudyMode {
+  MORNING
+  DAY
+  EVENING
+  WEEKEND
+}
+
+enum EPrefix {
+  MR
+  MS
+}
+
+model AlumniForm {
+  id               Int        @id @default(autoincrement())
+  collegeRollNo    String     @unique
+  uniRollNo        String     @unique
+  prefix           EPrefix
+  fullName         String
+  degree           String
+  yearOfPassing    String
+  mode             EStudyMode
+  email            String     @unique
+  mobileNo         String
+  presentEmployer  String?
+  designation      String?
+  presentCountry   String?
+  registrationDate DateTime   @default(now())
+  status           EStatus    @default(ENABLED)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  @@fulltext([collegeRollNo, uniRollNo, fullName, email])
+}
+model ScholarshipSchedule {
+  id          Int      @id @default(autoincrement())
+  scheduleYear       String   
+  regisrationOpenDate       String   
+  lastDate       String   
+  canDate       String  
+  admissionDate       String   
+
+  examDate   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

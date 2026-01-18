@@ -57,7 +57,6 @@ const getTeam = asyncHandler(async (req: Request, res: Response) => {
   }
   const department = parsedDept.data;
 
-  // Search filter
   const search = req.query.search?.toString().toLowerCase().trim();
   const searchFilter = search
     ? {
@@ -68,13 +67,10 @@ const getTeam = asyncHandler(async (req: Request, res: Response) => {
       }
     : {};
 
-  // Department filter
   const departmentFilter = department ? { department } : {};
 
-  // Combine filters
   const whereFilter = { AND: [searchFilter, departmentFilter] };
 
-  // Fetch users
   const users = await prismaClient.ourTeam.findMany({
     where: whereFilter,
     skip,

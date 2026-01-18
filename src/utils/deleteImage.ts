@@ -5,17 +5,24 @@ export const deleteCourseImage = (imagePath: string): void => {
   if (!imagePath) return;
 
   try {
-    let cleaned = imagePath.startsWith("/") ? imagePath.slice(1) : imagePath;
+    const filename = imagePath.startsWith("/")
+      ? imagePath.slice(1)
+      : imagePath;
 
-    const fullPath = path.join(process.cwd(), cleaned);
+    const fullPath = path.join(
+      process.cwd(),
+      "public",
+      "gallery",
+      filename
+    );
 
     if (fs.existsSync(fullPath)) {
       fs.unlinkSync(fullPath);
-      console.log("Deleted:", fullPath);
+      console.log("Gallery image deleted:", fullPath);
     } else {
-      console.log("File not found:", fullPath);
+      console.log("Gallery image not found:", fullPath);
     }
   } catch (error) {
-    console.error("Error deleting image:", error);
+    console.error("Error deleting gallery image:", error);
   }
 };

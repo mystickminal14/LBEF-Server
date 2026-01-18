@@ -5,6 +5,7 @@ import {
   editUser,
   getAll,
   getContact,
+  toggleContactStatus,
   
 } from "./contact.controller";
 import verifyJwt from "../../middleware/auth.middleware";
@@ -18,5 +19,6 @@ contactRoute.get("/all", getAll);
 contactRoute.post("/", [verifyJwt,requirePermission(EPermission.CONTACT)], addContact);
 contactRoute.put("/:id", [verifyJwt,requirePermission(EPermission.CONTACT)], editUser);
 contactRoute.delete("/:id", [verifyJwt,requirePermission(EPermission.CONTACT)], deleteUser);
+contactRoute.put("/status/:id", [verifyJwt,requirePermission(EPermission.CONTACT)], toggleContactStatus);
 
 export default contactRoute;

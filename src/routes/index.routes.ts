@@ -12,13 +12,17 @@ import noticeRouter from "../api/notice/notice.route";
 import intakeRoute from "../api/intake-calender/intake.route";
 import { plannerRouter } from "../api/academic-planner/planner.routes";
 import contactRoute from "../api/contact/contact.route";
-import { feePlannerRouter } from "../api/fee-planner/fee.planner.routes";
 import achievementRoute from "../api/achievement/achievement.route";
 import galleryRouter from "../api/media/gallery.route";
 import connectRouter from "../api/connect/connect.routes";
 import documentRouter from "../api/documents/document.route";
 import { journalRouter } from "../api/journal/journal.route";
 import editorialRouter from "../api/editorial-board/editorial.route";
+import plannerCourseRoute from "../api/planner-course/planner-course.route";
+import alumniRoute from "../api/alumni-form/alumni-routes";
+import { feePlannerRouter } from "../api/fee-planner/planner.routes";
+import emailRoute from "../api/emails/emal.router";
+import scholarshipRouter from "../api/scholarship/scholarship-router";
 
 const rootRouter: Router = Router();
 rootRouter.use("/auth", authRoutes);
@@ -39,7 +43,11 @@ rootRouter.use("/fee-planner", feePlannerRouter);
 rootRouter.use("/achivement", achievementRoute);
 rootRouter.use("/contact", contactRoute);
 rootRouter.use("/docs", documentRouter);
+rootRouter.use("/alumni-form", alumniRoute);
+rootRouter.use("/join-students", emailRoute);
+rootRouter.use("/scholarship", scholarshipRouter);
 rootRouter.use("/journal", journalRouter);
+rootRouter.use("/planner-course", plannerCourseRoute);
 rootRouter.use("/editorial", editorialRouter);
 
 

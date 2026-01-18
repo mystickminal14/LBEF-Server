@@ -26,6 +26,37 @@ import { paginationSchema } from "../../validation/pagination.validation";
     .status(201)
     .json(new ApiResponse(201, contact, "User contact added successfully"));
 });
+export const toggleContactStatus = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+
+    const contact = await prismaClient.contact.findUnique({
+      where: { id },
+    });
+
+    if (!contact) {
+      throw new ApiError(404, "Contact not found");
+    }
+
+    const updated = await prismaClient.contact.update({
+      where: { id },
+      data: {
+        status:
+          contact.status === "ENABLED" ? "DISABLED" : "ENABLED",
+      },
+    });
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        updated,
+        `Contact ${
+          updated.status === "ENABLED" ? "enabled" : "disabled"
+        } successfully`
+      )
+    );
+  }
+);
 
 const editUser = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id;
@@ -45,15 +76,16 @@ const editUser = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const getContact = asyncHandler(async (req: Request, res: Response) => {
-const parsed = paginationSchema.safeParse(req.query);
-  
-    if (!parsed.success) {
-      throw new ApiError(400, "Validation Failed", parsed.error.issues);
-    }
-    const { page, limit } = parsed.data;
-    const skip = (page - 1) * limit;
+  // Validate pagination
+  const parsed = paginationSchema.safeParse(req.query);
+  if (!parsed.success) {
+    throw new ApiError(400, "Validation Failed", parsed.error.issues);
+  }
+  const { page, limit } = parsed.data;
+  const skip = (page - 1) * limit;
 
-  let search = req.query.search?.toString().toLowerCase().trim() || "";
+  // Search query
+  const search = req.query.search?.toString().toLowerCase().trim() || "";
   const searchFilter = search
     ? {
         OR: [
@@ -61,23 +93,26 @@ const parsed = paginationSchema.safeParse(req.query);
           { purpose: { contains: search } },
           { email: { contains: search } },
           { department: { contains: search } },
-        
         ],
       }
     : {};
 
+  // Optional status filter
+  const status = req.query.status as "ENABLED" | "DISABLED" | undefined;
+  const whereFilter = status ? { ...searchFilter, status } : searchFilter;
 
+  // Fetch paginated data
   const users = await prismaClient.contact.findMany({
-    where: searchFilter,
+    where: whereFilter,
     skip,
     take: limit,
     orderBy: { createdAt: "desc" },
   });
 
+  // Total count
   const total = await prismaClient.contact.count({
-    where: searchFilter,
+    where: whereFilter,
   });
-
   const totalPages = Math.ceil(total / limit);
 
   const pagination = {
@@ -95,11 +130,14 @@ const parsed = paginationSchema.safeParse(req.query);
       new ApiResponse(200, users, "Contact List fetched successfully", pagination)
     );
 });
+
 export const getAll = asyncHandler(async (req: Request, res: Response) => {
 
 
   const users = await prismaClient.contact.findMany({
-
+  where: {
+      status: "ENABLED",
+    },
     orderBy: { createdAt: "desc" },
   });
 
