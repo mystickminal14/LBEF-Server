@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE `Permission` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` ENUM('USERS', 'COURSES', 'TEAMS', 'ALUMNI', 'PLANNER_COURSE', 'NEWS', 'ALMUNI_FORM', 'JOURNALS', 'EDITORIAL_BOARD', 'CONNECT', 'GALLERY', 'NOTICE', 'CONTACT', 'HOLIDAY', 'RECOGNITION', 'ACHIEVEMENT', 'INTAKE', 'DOCUMENTS', 'ACADEMIC_PLANNER', 'FEE_PLANNER', 'DOWNLOADS') NOT NULL,
+    `name` ENUM('USERS', 'COURSES', 'TEAMS', 'ALUMNI', 'PLANNER_COURSE', 'NEWS', 'ALMUNI_FORM', 'JOURNALS', 'EDITORIAL_BOARD', 'CONNECT', 'GALLERY', 'SCHOLARSHIP', 'NOTICE', 'CONTACT', 'HOLIDAY', 'RECOGNITION', 'ACHIEVEMENT', 'INTAKE', 'DOCUMENTS', 'ACADEMIC_PLANNER', 'FEE_PLANNER', 'DOWNLOADS') NOT NULL,
 
     UNIQUE INDEX `Permission_name_key`(`name`),
     PRIMARY KEY (`id`)
@@ -254,16 +254,14 @@ CREATE TABLE `AcademicYear` (
 -- CreateTable
 CREATE TABLE `AcademicPlanner` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `semester` VARCHAR(191) NULL,
-    `intake` VARCHAR(191) NULL,
+    `semester` VARCHAR(191) NOT NULL,
+    `intake` VARCHAR(191) NOT NULL,
     `file` VARCHAR(191) NULL,
-    `plannerCourseId` INTEGER NOT NULL,
     `academicYearId` INTEGER NOT NULL,
+    `plannerCourseId` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `AcademicPlanner_semester_key`(`semester`),
-    INDEX `AcademicPlanner_academicYearId_plannerCourseId_idx`(`academicYearId`, `plannerCourseId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -283,12 +281,13 @@ CREATE TABLE `FeePlanner` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `semester` VARCHAR(191) NULL,
     `file` VARCHAR(191) NULL,
-    `plannerCourseId` INTEGER NOT NULL,
+    `course` VARCHAR(191) NULL,
     `feeYearId` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
+    `plannerCourseId` INTEGER NULL,
 
-    INDEX `FeePlanner_feeYearId_plannerCourseId_idx`(`feeYearId`, `plannerCourseId`),
+    INDEX `FeePlanner_feeYearId_idx`(`feeYearId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -393,6 +392,7 @@ CREATE TABLE `AlumniForm` (
     `designation` VARCHAR(191) NULL,
     `presentCountry` VARCHAR(191) NULL,
     `registrationDate` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `status` ENUM('ENABLED', 'DISABLED') NOT NULL DEFAULT 'ENABLED',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -400,6 +400,21 @@ CREATE TABLE `AlumniForm` (
     UNIQUE INDEX `AlumniForm_uniRollNo_key`(`uniRollNo`),
     UNIQUE INDEX `AlumniForm_email_key`(`email`),
     FULLTEXT INDEX `AlumniForm_collegeRollNo_uniRollNo_fullName_email_idx`(`collegeRollNo`, `uniRollNo`, `fullName`, `email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `ScholarshipSchedule` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `scheduleYear` VARCHAR(191) NOT NULL,
+    `regisrationOpenDate` VARCHAR(191) NOT NULL,
+    `lastDate` VARCHAR(191) NOT NULL,
+    `canDate` VARCHAR(191) NOT NULL,
+    `admissionDate` VARCHAR(191) NOT NULL,
+    `examDate` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -416,16 +431,16 @@ ALTER TABLE `CourseDetailBlock` ADD CONSTRAINT `CourseDetailBlock_courseId_fkey`
 ALTER TABLE `CourseDetailBlock` ADD CONSTRAINT `CourseDetailBlock_parentId_fkey` FOREIGN KEY (`parentId`) REFERENCES `CourseDetailBlock`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `AcademicPlanner` ADD CONSTRAINT `AcademicPlanner_plannerCourseId_fkey` FOREIGN KEY (`plannerCourseId`) REFERENCES `PlannerCourse`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `AcademicPlanner` ADD CONSTRAINT `AcademicPlanner_academicYearId_fkey` FOREIGN KEY (`academicYearId`) REFERENCES `AcademicYear`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `AcademicPlanner` ADD CONSTRAINT `AcademicPlanner_academicYearId_fkey` FOREIGN KEY (`academicYearId`) REFERENCES `AcademicYear`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `FeePlanner` ADD CONSTRAINT `FeePlanner_plannerCourseId_fkey` FOREIGN KEY (`plannerCourseId`) REFERENCES `PlannerCourse`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `AcademicPlanner` ADD CONSTRAINT `AcademicPlanner_plannerCourseId_fkey` FOREIGN KEY (`plannerCourseId`) REFERENCES `PlannerCourse`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `FeePlanner` ADD CONSTRAINT `FeePlanner_feeYearId_fkey` FOREIGN KEY (`feeYearId`) REFERENCES `FeeYear`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `FeePlanner` ADD CONSTRAINT `FeePlanner_plannerCourseId_fkey` FOREIGN KEY (`plannerCourseId`) REFERENCES `PlannerCourse`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `PhotoGallery` ADD CONSTRAINT `PhotoGallery_typeId_fkey` FOREIGN KEY (`typeId`) REFERENCES `GalleryType`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

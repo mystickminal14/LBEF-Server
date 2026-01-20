@@ -1,4 +1,4 @@
-import { PrismaClient, EUserRole, EPermission } from "@prisma/client";
+import { PrismaClient, EUserRole, EPermission, EHonoraryPosition } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -44,7 +44,199 @@ async function main() {
   console.log("✅ Normal user ready");
 
  
+const editorialBoardData = [
+    {
+      name: "Ajaya Kumar Sharma",
+      designation: "Dean Academics",
+      honoraryPosition: EHonoraryPosition.ASSOCIATE_EDITOR,
+      department: "Patan College of Professional Studies",
+      institution: "Patan College of Professional Studies",
+      country: "Nepal",
+    },
+    {
+      name: "Prakash Kumar",
+      designation: "Executive Director",
+      honoraryPosition: EHonoraryPosition.PATRON,
+      department: "LBEF Group of Institutions",
+      institution: "LBEF Group of Institutions",
+      country: "Nepal",
+    },
+    {
+      name: "Dr. Prity Atal",
+      designation: "PGD Manager and Research Head",
+      honoraryPosition: EHonoraryPosition.EDITOR_IN_CHIEF,
+      department: "LBEF Campus",
+      institution: "LBEF Campus",
+      country: "Nepal",
+    },
+    {
+      name: "Er. Pankaj Jalan",
+      designation: "Chairman",
+      honoraryPosition: EHonoraryPosition.CHIEF_PATRON,
+      department: "LBEF Group of Institution",
+      institution: "LBEF Group of Institution",
+      country: "Nepal",
+    },
+    {
+      name: "Mr. Jyotir Moy Chatterjee",
+      designation: "Visiting Faculty",
+      honoraryPosition: EHonoraryPosition.ASSOCIATE_EDITOR,
+      department: "LBEF Campus",
+      institution: "LBEF Campus",
+      country: "Nepal",
+    },
+    {
+      name: "Mr. Nishant Shrestha",
+      designation: "Program Leader-B.Sc. IT",
+      honoraryPosition: EHonoraryPosition.MANAGING_EDITOR,
+      department: "LBEF Campus",
+      institution: "LBEF Campus",
+      country: "Nepal",
+    },
+    {
+      name: "Mr. Suman Bhattacharya",
+      designation: "Program Leader – M.Sc. ITM & MBA",
+      honoraryPosition: EHonoraryPosition.MANAGING_EDITOR,
+      department: "LBEF Campus",
+      institution: "LBEF Campus",
+      country: "Nepal",
+    },
+    {
+      name: "Ms. Saya Joshi",
+      designation: "Faculty Member",
+      honoraryPosition: EHonoraryPosition.EDITORIAL_BOARD_MEMBER,
+      department: "LBEF Campus",
+      institution: "LBEF Campus",
+      country: "Nepal",
+    },
+    {
+      name: "Ms. Anwesha Shresthacharya",
+      designation: "Faculty Member",
+      honoraryPosition: EHonoraryPosition.EDITORIAL_BOARD_MEMBER,
+      department: "LBEF Campus",
+      institution: "LBEF Campus",
+      country: "Nepal",
+    },
+    {
+      name: "Dr. Sumit Kumar Kapoor",
+      designation: "Faculty Member",
+      honoraryPosition: EHonoraryPosition.EDITORIAL_BOARD_MEMBER,
+      department: "LBEF Campus",
+      institution: "LBEF Campus",
+      country: "Nepal",
+    },
+    {
+      name: "Dr. Mohd. Wazih Ahmad",
+      designation: "Faculty Member",
+      honoraryPosition: EHonoraryPosition.EDITORIAL_BOARD_MEMBER,
+      department: "LBEF Campus",
+      institution: "LBEF Campus",
+      country: "Nepal",
+    },
+    {
+      name: "Dr. Zatin Gup",
+      designation: "Faculty Member",
+      honoraryPosition: EHonoraryPosition.ADVISOR,
+      department: "LBEF Campus",
+      institution: "LBEF Campus",
+      country: "Nepal",
+    },
+    {
+      name: "Prof. (Dr.) Geeta Bhakta Joshi",
+      designation: "Former Registrar",
+      honoraryPosition: EHonoraryPosition.ADVISOR,
+      department: "Tribhuvan University",
+      institution: "Tribhuvan University",
+      country: "Nepal",
+    },
+    {
+      name: "Dr. Sheng-Lung Peng",
+      designation: "Professor",
+      honoraryPosition: EHonoraryPosition.ADVISOR,
+      department: "National Dong Hwa University",
+      institution: "National Dong Hwa University",
+      country: "Taiwan",
+    },
+    {
+      name: "Dr. H.K. Singh",
+      designation: "Professor",
+      honoraryPosition: EHonoraryPosition.ADVISOR,
+      department: "Banaras Hindu University",
+      institution: "Banaras Hindu University",
+      country: "India",
+    },
+    {
+      name: "Col. Dr. B. S. Dhaliwal",
+      designation: "Director (Academics)",
+      honoraryPosition: EHonoraryPosition.ADVISOR,
+      department: "Guru Nanak Group of Institutions, Bidar",
+      institution: "Guru Nanak Group of Institutions, Bidar",
+      country: "India",
+    },
+    {
+      name: "Dr S.B. Goyal",
+      designation: "Dean",
+      honoraryPosition: EHonoraryPosition.ADVISOR,
+      department: "Faculty of Information Technology",
+      institution: "City University",
+      country: "Malaysia",
+    },
+    {
+      name: "Prof. (Dr.) M.P. Thapliyal",
+      designation: "Professor",
+      honoraryPosition: EHonoraryPosition.ADVISOR,
+      department: "H.N.B. Garhwal University",
+      institution: "H.N.B. Garhwal University",
+      country: "India",
+    },
+    {
+      name: "Prof. Dr. Vishal Goyal",
+      designation: "Professor",
+      honoraryPosition: EHonoraryPosition.ADVISOR,
+      department: "Department of Computer Science",
+      institution: "Punjabi University",
+      country: "India",
+    },
+    {
+      name: "Prof. Dr. Gurpreet Singh",
+      designation: "Director",
+      honoraryPosition: EHonoraryPosition.EDITORIAL_BOARD_MEMBER,
+      department: "Punjab Institute of Technology Rajpura",
+      institution: "Punjab Institute of Technology Rajpura",
+      country: "India",
+    },
+    {
+      name: "Prof. Dr. Abhay Saxena",
+      designation: "Dean-School of Technology",
+      honoraryPosition: EHonoraryPosition.ADVISOR,
+      department: "Management and Communication",
+      institution: "Dev Sanskriti Vishwavidyalaya",
+      country: "India",
+    },
+    {
+      name: "Dr. Sanjay Gour",
+      designation: "Professor & Head",
+      honoraryPosition: EHonoraryPosition.ADVISOR,
+      department: "Department of Computer Science & Engineering",
+      institution: "Jaipur Institution",
+      country: "India",
+    },
+    {
+      name: "Dr. Pradeep N",
+      designation: "Associate Professor",
+      honoraryPosition: EHonoraryPosition.ADVISOR,
+      department: "Bapuji Institute of Engineering and Technology",
+      institution: "BIET",
+      country: "India",
+    },
+  ];
 
+  await prisma.editorialBoard.createMany({
+    data: editorialBoardData,
+    skipDuplicates: true,
+  });
+
+  console.log("✅ Editorial Board seeded successfully");
   const teamUserPassword = process.env.TEAM_USER_PASSWORD || "team@123";
   const teamUserHashed = await bcrypt.hash(teamUserPassword, 10);
 
