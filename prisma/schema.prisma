@@ -109,7 +109,10 @@ model User {
 
   @@fulltext([fullname, username])
 }
-
+enum EHOLIDAYTYPE {
+  ACADEMIC
+  ADMINISTRATIVE
+}
 model Course {
   id        Int                 @id @default(autoincrement())
   title     String              @unique
@@ -128,12 +131,6 @@ model Course {
 
   @@fulltext([title, category])
 }
-
-enum EHOLIDAYTYPE {
-  ACADEMIC
-  ADMINISTRATIVE
-}
-
 model CourseDetailBlock {
   id       Int    @id @default(autoincrement())
   course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -465,6 +462,8 @@ model AlumniForm {
   mobileNo         String
   presentEmployer  String?
   designation      String?
+  content String?   @db.VarChar(1000)
+
   presentCountry   String?
   registrationDate DateTime   @default(now())
   status           EStatus    @default(ENABLED)

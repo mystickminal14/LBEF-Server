@@ -18,6 +18,7 @@ const addAlumni = asyncHandler(async (req: Request, res: Response) => {
     uniRollNo,
     prefix,
     fullName,
+    content,
     degree,
     yearOfPassing,
     mode,
@@ -28,14 +29,21 @@ const addAlumni = asyncHandler(async (req: Request, res: Response) => {
     presentCountry,
   } = parsed.data;
 
+  // ✅ Prevent duplicate registration by roll numbers
   const existing = await prismaClient.alumniForm.findFirst({
     where: {
-      OR: [{ email }, { collegeRollNo }, { uniRollNo }],
+      OR: [
+        { collegeRollNo },
+        { uniRollNo },
+      ],
     },
   });
 
   if (existing) {
-    throw new ApiError(400, "Alumni already registered");
+    throw new ApiError(
+      400,
+      "Alumni already registered with this College Roll No or University Roll No"
+    );
   }
 
   const alumni = await prismaClient.alumniForm.create({
@@ -44,6 +52,7 @@ const addAlumni = asyncHandler(async (req: Request, res: Response) => {
       uniRollNo,
       prefix,
       fullName,
+      content,
       degree,
       yearOfPassing,
       mode,
@@ -55,11 +64,14 @@ const addAlumni = asyncHandler(async (req: Request, res: Response) => {
     },
   });
 
-  return res
-    .status(201)
-    .json(new ApiResponse(201, alumni, "You have successfully registered Alumni Form"));
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      alumni,
+      "You have successfully registered Alumni Form"
+    )
+  );
 });
-
 
 const editAlumni = asyncHandler(async (req: Request, res: Response) => {
   const id = Number(req.params.id);
@@ -113,7 +125,6 @@ const getAlumni = asyncHandler(async (req: Request, res: Response) => {
       }
     : {};
 
-  // Combine searchFilter and status filter
   const whereFilter = {
     ...searchFilter,
     ...(status ? { status } : {}),

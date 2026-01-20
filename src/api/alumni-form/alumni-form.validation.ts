@@ -9,6 +9,8 @@ export const AlumniFormSchema = z.object({
   uniRollNo: z.string().min(1, "University roll number is required"),
   prefix: EPrefixEnum,
   fullName: z.string().min(1, "Full name is required"),
+  content: z.string().min(1, "Bio is required"),
+
   degree: z.string().min(1, "Degree is required"),
   yearOfPassing: z.string(),
   mode: EStudyModeEnum,

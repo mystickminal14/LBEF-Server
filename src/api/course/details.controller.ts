@@ -4,6 +4,7 @@ import { ApiError } from "../../utils/apiError";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { CourseDetailArraySchema } from "./details.validation";
 import { ApiResponse } from "../../utils/apiResponse";
+import { paginationSchema } from "../../validation/pagination.validation";
 
 export interface CourseDetailBlockTree {
   id: number;
@@ -144,25 +145,55 @@ const editCourseDetails = asyncHandler(async (req: Request, res: Response) => {
 
   res.json(new ApiResponse(200, blocks, "Course details updated successfully!"));
 });
-
 const getCourseDetails = asyncHandler(async (req: Request, res: Response) => {
   const courseId = Number(req.params.courseId);
+
+  const parsed = paginationSchema.safeParse(req.query);
+  if (!parsed.success) {
+    throw new ApiError(400, "Validation Failed", parsed.error.issues);
+  }
+
+  const { page, limit } = parsed.data;
+  const skip = (page - 1) * limit;
 
   const existingCourse = await prismaClient.course.findUnique({
     where: { id: courseId },
   });
+
   if (!existingCourse) {
     throw new ApiError(404, "Course not found");
   }
 
-  const blocks = await prismaClient.courseDetailBlock.findMany({
+  /* ---------------------------------------------
+     1️⃣ Fetch PAGINATED ROOT blocks
+  --------------------------------------------- */
+  const rootBlocks = await prismaClient.courseDetailBlock.findMany({
+    where: {
+      courseId,
+      parentId: null,
+    },
+    orderBy: { order: "asc" },
+    skip,
+    take: limit,
+  });
+
+  const rootIds = rootBlocks.map((b) => b.id);
+
+  /* ---------------------------------------------
+     2️⃣ Fetch ALL blocks for this course
+     (needed to build full depth tree)
+  --------------------------------------------- */
+  const allBlocks = await prismaClient.courseDetailBlock.findMany({
     where: { courseId },
     orderBy: { order: "asc" },
   });
 
-  // Build map
+  /* ---------------------------------------------
+     3️⃣ Build map
+  --------------------------------------------- */
   const map: Record<number, CourseDetailBlockTree> = {};
-  blocks.forEach((block) => {
+
+  allBlocks.forEach((block) => {
     map[block.id] = {
       id: block.id,
       title: block.title,
@@ -174,20 +205,92 @@ const getCourseDetails = asyncHandler(async (req: Request, res: Response) => {
     };
   });
 
-  // Build tree
-  const tree: CourseDetailBlockTree[] = [];
-  blocks.forEach((block) => {
-    if (block.parentId === null) {
-      tree.push(map[block.id]);
-    } else {
-      if (map[block.parentId]) {
-        map[block.parentId].children.push(map[block.id]);
-      }
+  /* ---------------------------------------------
+     4️⃣ Build FULL TREE
+  --------------------------------------------- */
+  allBlocks.forEach((block) => {
+    if (block.parentId && map[block.parentId]) {
+      map[block.parentId].children.push(map[block.id]);
     }
   });
 
-  res.json(new ApiResponse(200, tree, "Course details fetched successfully!"));
+  /* ---------------------------------------------
+     5️⃣ Return ONLY PAGINATED ROOT TREES
+  --------------------------------------------- */
+  const tree = rootIds.map((id) => map[id]).filter(Boolean);
+
+  /* ---------------------------------------------
+     6️⃣ Pagination meta
+  --------------------------------------------- */
+  const total = await prismaClient.courseDetailBlock.count({
+    where: { courseId, parentId: null },
+  });
+
+  const totalPages = Math.ceil(total / limit);
+
+  const pagination = {
+    total,
+    page,
+    limit,
+    totalPages,
+    hasNextPage: page < totalPages,
+    hasPrevPage: page > 1,
+  };
+
+  return res.json(
+    new ApiResponse(
+      200,
+      tree,
+      "Course details fetched successfully!",
+      pagination
+    )
+  );
 });
+
+
+// const getCourseDetails = asyncHandler(async (req: Request, res: Response) => {
+//   const courseId = Number(req.params.courseId);
+
+//   const existingCourse = await prismaClient.course.findUnique({
+//     where: { id: courseId },
+//   });
+//   if (!existingCourse) {
+//     throw new ApiError(404, "Course not found");
+//   }
+
+//   const blocks = await prismaClient.courseDetailBlock.findMany({
+//     where: { courseId },
+//     orderBy: { order: "asc" },
+//   });
+
+//   // Build map
+//   const map: Record<number, CourseDetailBlockTree> = {};
+//   blocks.forEach((block) => {
+//     map[block.id] = {
+//       id: block.id,
+//       title: block.title,
+//       type: block.type as any,
+//       order: block.order,
+//       content: safeParseContent(block),
+//       parentId: block.parentId,
+//       children: [],
+//     };
+//   });
+
+//   // Build tree
+//   const tree: CourseDetailBlockTree[] = [];
+//   blocks.forEach((block) => {
+//     if (block.parentId === null) {
+//       tree.push(map[block.id]);
+//     } else {
+//       if (map[block.parentId]) {
+//         map[block.parentId].children.push(map[block.id]);
+//       }
+//     }
+//   });
+
+//   res.json(new ApiResponse(200, tree, "Course details fetched successfully!"));
+// });
 
 const updateBlock = asyncHandler(async (req: Request, res: Response) => {
   const blockId = parseInt(req.params.id);
