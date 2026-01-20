@@ -19,7 +19,7 @@ export const createFeePlanner = asyncHandler(
     const { feeYearId, semester, course } = parsed.data;
     if (!req.file) throw new ApiError(400, "No file provided");
     const filename = req.file.filename;
-    const file = `/public/planner/${filename}`;
+    const file = `/public/fee-planner/${filename}`;
     const courseCheck = await prismaClient.feeYear.findUnique({
       where: { id: Number(feeYearId) },
     });
@@ -136,7 +136,7 @@ export const updateFeePlanner = asyncHandler(
       if (planner.file) {
         deletePDF(planner.file);
       }
-      filePath = `/public/planner/${req.file.filename}`;
+      filePath = `/public/fee-planner/${req.file.filename}`;
     }
 
     const updatedPlanner = await prismaClient.feePlanner.update({
