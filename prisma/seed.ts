@@ -340,6 +340,64 @@ const editorialBoardData = [
   });
 
   console.log("✅ TEAMS permission assigned to team user");
+  const contactSeedData = [
+  {
+    purpose: "Academic Matters related to B.Sc. IT",
+    name: "Mr. Nishant Shrestha",
+    department: "Program Leader – B.Sc. IT",
+    email: "pl.bscit@lbef.edu.np",
+  },
+  {
+    purpose: "Academic Matters related to M.Sc. ITM",
+    name: "Program Leader – M.Sc. ITM",
+    department: "Program Leader – M.Sc. ITM",
+    email: "msc.itm@lbef.edu.np",
+  },
+  {
+    purpose: "Academic Matters related to BBM",
+    name: "Program Leader – BBM",
+    department: "Program Leader – BBM",
+    email: "bbm@lbef.edu.np",
+  },
+  {
+    purpose: "IT related matters (Edusys, Moodle, admit card download)",
+    name: "Mr. Jasbir Singh",
+    department: "IT Officer",
+    email: "jasbir.makkar@lbef.edu.np",
+  },
+  {
+    purpose: "Exam related matters (results, transcripts)",
+    name: "Ms. Anju Ghosh",
+    department: "Exam Controller",
+    email: "anju.ghosh@lbef.edu.np",
+  },
+  {
+    purpose:
+      "Registration, re-registration, docket collection, bonafide letters, character certificates",
+    name: "Ms. Minakshi Paudel",
+    department: "Student Support Section",
+    email: "studentssection@lbef.edu.np",
+  },
+  {
+    purpose: "Accounts related matters (fees, dues etc.)",
+    name: "Ms. Nirmala Dangol",
+    department: "Finance",
+    email: "accounts@lbef.edu.np",
+  },
+  {
+    purpose: "IT lab related matters (Internet access)",
+    name: "Mr. Saugat Joshy",
+    department: "Computer Lab",
+    email: "saugaat.joshy@lbef.edu.np",
+  },
+];
+await prisma.contact.createMany({
+  data: contactSeedData,
+  skipDuplicates: true,
+});
+
+console.log("✅ Contact list seeded (excluding Suman Bhattacharya)");
+
 }
 
 main()

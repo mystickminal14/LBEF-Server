@@ -117,6 +117,7 @@ model Course {
   id        Int                 @id @default(autoincrement())
   title     String              @unique
   shift     EShift
+  order     Int?
   duration  String?
   category  String?
   details   String?             @db.VarChar(500)
