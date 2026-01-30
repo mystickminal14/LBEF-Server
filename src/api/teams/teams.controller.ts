@@ -75,7 +75,7 @@ const getTeam = asyncHandler(async (req: Request, res: Response) => {
     where: whereFilter,
     skip,
     take: limit,
-    orderBy: { createdAt: "desc" },
+    orderBy: { name: "asc" },
   });
 
   const total = await prismaClient.ourTeam.count({ where: whereFilter });
@@ -97,7 +97,7 @@ const getTeam = asyncHandler(async (req: Request, res: Response) => {
 
 const getTeamsByDepartment = asyncHandler(async (req: Request, res: Response) => {
   const teams = await prismaClient.ourTeam.findMany({
-    orderBy: { createdAt: "desc" },
+    orderBy: { name: "asc" },
   });
 
   const grouped: Record<string, typeof teams> = {

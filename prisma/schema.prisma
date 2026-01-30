@@ -120,10 +120,13 @@ model Course {
   order     Int?
   duration  String?
   category  String?
+  fullForm  String?
   details   String?             @db.VarChar(500)
   prefix    String?
   degree    String?
   semester  String?
+  intake    String?
+  brochure  String?
   credit    String
   image     String?
   createdAt DateTime            @default(now())
@@ -480,7 +483,6 @@ model ScholarshipSchedule {
   lastDate       String   
   canDate       String  
   admissionDate       String   
-
   examDate   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

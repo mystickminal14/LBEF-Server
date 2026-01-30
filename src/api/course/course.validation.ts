@@ -15,6 +15,9 @@ export const CourseSchema = z
     degree: z.string("Degree Title is required" ),
     details: z.string("Course caption is required" ),
     order: z.number().optional(),
+    fullForm: z.string().optional(),
+    intake: z.string("Intake Date is required" ),
+    brochure: z.string().optional(),
 
     shift: z.nativeEnum(EShift).default(EShift.MORNING),
     credit: z.string("Credit score is required" ),
