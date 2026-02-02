@@ -181,15 +181,20 @@ model Alumni {
 
   @@fulltext([name, course])
 }
-
+enum ETYPE {
+  RECOGNITION
+  PERMISSION
+}
 model Recognition {
   id          Int      @id @default(autoincrement())
   name        String
   description String
+  type        ETYPE?
   image       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
 
 model OurTeam {
   id         Int         @id @default(autoincrement())
@@ -200,6 +205,7 @@ model OurTeam {
   image      String?
   portrait   String?
   facebook   String?
+  order      Int?
   insta      String?
   phone      String?
   email      String?
@@ -467,15 +473,18 @@ model AlumniForm {
   presentEmployer  String?
   designation      String?
   content String?   @db.VarChar(1000)
-
   presentCountry   String?
+  image            String?
   registrationDate DateTime   @default(now())
   status           EStatus    @default(ENABLED)
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
-
   @@fulltext([collegeRollNo, uniRollNo, fullName, email])
 }
+ enum ESchlolarStatue{
+  OPEN
+  CLOSED
+ }
 model ScholarshipSchedule {
   id          Int      @id @default(autoincrement())
   scheduleYear       String   
@@ -483,6 +492,7 @@ model ScholarshipSchedule {
   lastDate       String   
   canDate       String  
   admissionDate       String   
+  status   ESchlolarStatue
   examDate   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

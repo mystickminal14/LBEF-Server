@@ -6,6 +6,7 @@ import { prismaClient } from "../../server";
 import { deleteCourseImage } from "../../utils/deleteImage";
 import { RecognitionSchema } from "./recognitons.validations";
 import { paginationSchema } from "../../validation/pagination.validation";
+import { ETYPE } from "@prisma/client";
 
 const add = asyncHandler(async (req: Request, res: Response) => {
   const parsed = RecognitionSchema.safeParse(req.body);
@@ -44,34 +45,53 @@ const edit = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(200, updated, "Recognition updated successfully"));
 });
 const getAllRecognition = asyncHandler(async (req: Request, res: Response) => {
+  const { type } = req.query;
+
   const recognition = await prismaClient.recognition.findMany({
+    where: type
+      ? {
+          type: type as ETYPE, 
+        }
+      : undefined,
     orderBy: { createdAt: "desc" },
   });
-
-  const total = await prismaClient.recognition.count();
 
   return res
     .status(200)
     .json(new ApiResponse(200, recognition, "Recognition fetched successfully"));
 });
+
 const getRecognition = asyncHandler(async (req: Request, res: Response) => {
   const parsed = paginationSchema.safeParse(req.query);
 
   if (!parsed.success) {
     throw new ApiError(400, "Validation Failed", parsed.error.issues);
-  }  
-const { page, limit } = parsed.data;
+  }
+
+  const { page, limit } = parsed.data;
+  const { type } = req.query;
+
   const skip = (page - 1) * limit;
 
+  const whereClause = type
+    ? {
+        type: type as ETYPE,
+      }
+    : undefined;
 
   const recognition = await prismaClient.recognition.findMany({
     skip,
     take: limit,
+    where: whereClause,
     orderBy: { createdAt: "desc" },
   });
 
-  const total = await prismaClient.recognition.count();
+  const total = await prismaClient.recognition.count({
+    where: whereClause,
+  });
+
   const totalPages = Math.ceil(total / limit);
+
   const pagination = {
     total,
     page,
@@ -81,17 +101,16 @@ const { page, limit } = parsed.data;
     hasPrevPage: page > 1,
   };
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        recognition,
-        "Recognition fetched successfully",
-        pagination
-      )
-    );
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      recognition,
+      "Recognition fetched successfully",
+      pagination
+    )
+  );
 });
+
 const uploadRecognition = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id;
 

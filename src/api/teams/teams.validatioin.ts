@@ -15,6 +15,8 @@ export const TeamsValidation = z.object({
   facebook: z.string().optional(),
   insta: z.string().optional(),
   linkedIn: z.string().optional(),
+  order: z.int().optional(),
+  
   position: z.string( "Position is required" ),
   department: z.nativeEnum(EDepartment).default(EDepartment.MANAGEMENT),
 });

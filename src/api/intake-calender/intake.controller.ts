@@ -5,6 +5,7 @@ import { prismaClient } from "../../server";
 import { ApiResponse } from "../../utils/apiResponse";
 import bcrypt from "bcryptjs";
 import { IntakeSchema } from "./intake.validation";
+import { EIntakeStatus } from "@prisma/client";
 
 const addIntake = asyncHandler(async (req: Request, res: Response) => {
   const parsed = IntakeSchema.safeParse(req.body);
@@ -46,20 +47,25 @@ const editIntake = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const getIntake = asyncHandler(async (req: Request, res: Response) => {
-  
-  
-
   const users = await prismaClient.admissionIntake.findMany({
-    
-    orderBy: { createdAt: "desc" },
+    // Order OPEN first, then CLOSED
+    orderBy: {
+      status: 'asc', // default alphabetical: CLOSED < OPEN
+    },
+  });
+
+  // If you want OPEN first and CLOSED second, we can sort manually
+  const sortedUsers = users.sort((a, b) => {
+    if (a.status === 'OPEN' && b.status !== 'OPEN') return -1;
+    if (a.status !== 'OPEN' && b.status === 'OPEN') return 1;
+    return 0;
   });
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, users, "Intake Calender successfully")
-    );
+    .json(new ApiResponse(200, sortedUsers, "Intake Calendar successfully"));
 });
+
 const deleteIntake = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
 

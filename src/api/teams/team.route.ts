@@ -9,6 +9,7 @@ import {
   updateteamImage,
   getTeam,
   getTeamsByDepartment,
+  changeTeamOrder,
 } from "./teams.controller";
 import { requirePermission } from "../../middleware/permission.middleware";
 import { EPermission } from "../users/permisssion";
@@ -19,6 +20,11 @@ teamRouter.get("/department", getTeamsByDepartment);
 
 teamRouter.post("/", [verifyJwt, requirePermission(EPermission.TEAMS)], add);
 teamRouter.put("/:id", [verifyJwt, requirePermission(EPermission.TEAMS)], edit);
+teamRouter.put(
+  "/change-order/:id",
+  [verifyJwt, requirePermission(EPermission.TEAMS)],
+  changeTeamOrder
+);
 
 teamRouter.put(
   "/upload/:id",
