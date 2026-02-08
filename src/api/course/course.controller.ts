@@ -23,7 +23,7 @@ const addCourse = asyncHandler(async (req: Request, res: Response) => {
     duration,
     degree,
     prefix,
-    details,
+    details,feeStructure,
     category,fullForm,
     semester,
   } = parsed.data;
@@ -50,7 +50,7 @@ const addCourse = asyncHandler(async (req: Request, res: Response) => {
       shift,
       degree,
       prefix,fullForm, intake,
-    brochure,
+    brochure,feeStructure,
       credit,
       duration: duration ?? "",
       category: category ?? "",
@@ -78,7 +78,7 @@ const editCourse = asyncHandler(async (req: Request, res: Response) => {
     shift,
     credit,
     duration, intake,
-    brochure,
+    brochure,feeStructure,
     category,
     degree,
     prefix,fullForm,
@@ -97,7 +97,7 @@ const editCourse = asyncHandler(async (req: Request, res: Response) => {
   const updatedCourse = await prismaClient.course.update({
     where: { id },
     data: {
-      title,
+      title,feeStructure,
       degree, intake,
     brochure,
       details,

@@ -13,6 +13,8 @@ export enum EPermission {
 
   NOTICE = "NOTICE",
   CONTACT = "CONTACT",
+  TEAM_DEPT = "TEAM_DEPT",
+
   PLANNER_COURSE = "PLANNER_COURSE",
   ALMUNI_FORM = "ALMUNI_FORM",
 

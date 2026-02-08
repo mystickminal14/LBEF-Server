@@ -1,9 +1,11 @@
 import { z } from "zod";
-export enum EDepartment {
-  ADMINISTRATION = "ADMINISTRATION",
-  COMPUTING = "COMPUTING",
-  MANAGEMENT = "MANAGEMENT",
-}
+export const TeamDepartment = z
+  .object({
+    name: z.string("Department Name is required" ),
+    order: z.number().optional(),
+
+  })
+
 
 export const TeamsValidation = z.object({
   name: z.string( "Full Name is required" ),
@@ -15,11 +17,10 @@ export const TeamsValidation = z.object({
   facebook: z.string().optional(),
   insta: z.string().optional(),
   linkedIn: z.string().optional(),
-  order: z.int().optional(),
+  order: z.number().optional(),
   
   position: z.string( "Position is required" ),
-  department: z.nativeEnum(EDepartment).default(EDepartment.MANAGEMENT),
+  departmentId: z.number( "Department name is required" ),
 });
 
 
-export const departmentSchema = z.enum(["MANAGEMENT", "ADMINISTRATION", "COMPUTING"]).optional();

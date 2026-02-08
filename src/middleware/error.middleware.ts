@@ -15,7 +15,6 @@ export const errorMiddleware = (
     method: req.method,
   });
 
-  // Prisma errors
   if (err.code && err.code.startsWith("P")) {
     return res.status(400).json({
       success: false,
@@ -25,7 +24,6 @@ export const errorMiddleware = (
     });
   }
 
-  // Custom API errors
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
       success: false,
@@ -35,7 +33,6 @@ export const errorMiddleware = (
     });
   }
 
-  // Invalid JSON
   if (err instanceof SyntaxError) {
     return res.status(422).json({
       success: false,

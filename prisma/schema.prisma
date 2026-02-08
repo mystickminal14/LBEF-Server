@@ -25,6 +25,7 @@ enum EPermission {
   USERS
   COURSES
   TEAMS
+  TEAM_DEPT
   ALUMNI
   PLANNER_COURSE
   NEWS
@@ -39,10 +40,8 @@ enum EPermission {
   HOLIDAY
   RECOGNITION
   ACHIEVEMENT
-
   INTAKE
   DOCUMENTS
-
   ACADEMIC_PLANNER
   FEE_PLANNER
   DOWNLOADS
@@ -126,6 +125,7 @@ model Course {
   degree    String?
   semester  String?
   intake    String?
+  feeStructure  String?
   brochure  String?
   credit    String
   image     String?
@@ -195,23 +195,36 @@ model Recognition {
   updatedAt   DateTime @updatedAt
 }
 
+model TeamDept{
+  id         Int         @id @default(autoincrement())
+  name       String @unique
+  order      Int
+  status     EStatus
+  createdAt  DateTime    @default(now())
+members   OurTeam[] // relation field
+
+  updatedAt  DateTime    @updatedAt
+
+}
 
 model OurTeam {
-  id         Int         @id @default(autoincrement())
-  name       String
-  position   String
-  department EDepartment
-  bio        String?     @db.VarChar(1000)
-  image      String?
-  portrait   String?
-  facebook   String?
-  order      Int?
-  insta      String?
-  phone      String?
-  email      String?
-  linkedIn   String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id           Int       @id @default(autoincrement())
+  name         String
+  position     String
+  departmentId Int?        // foreign key
+  department   TeamDept?   @relation(fields: [departmentId], references: [id])
+  bio          String?    @db.VarChar(1000)
+  image        String?
+  portrait     String?
+  facebook     String?
+  insta        String?
+  phone        String?
+  email        String?
+  linkedIn     String?
+  order        Int?
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   @@fulltext([name, position])
 }

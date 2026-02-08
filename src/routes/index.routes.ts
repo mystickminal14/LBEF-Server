@@ -23,6 +23,7 @@ import alumniRoute from "../api/alumni-form/alumni-routes";
 import { feePlannerRouter } from "../api/fee-planner/planner.routes";
 import emailRoute from "../api/emails/emal.router";
 import scholarshipRouter from "../api/scholarship/scholarship-router";
+import deptRouter from "../api/teams/department.route";
 
 const rootRouter: Router = Router();
 rootRouter.use("/auth", authRoutes);
@@ -32,6 +33,8 @@ rootRouter.use("/news", newsRouter);
 rootRouter.use("/alumni", alumniRouter);
 rootRouter.use("/recognition", recognitionRouter);
 rootRouter.use("/teams", teamRouter);
+rootRouter.use("/dept", deptRouter);
+
 rootRouter.use("/holiday", holdayRouter);
 rootRouter.use("/downloads", downloadRouter);
 rootRouter.use("/notice", noticeRouter);

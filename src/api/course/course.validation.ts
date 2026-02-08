@@ -18,6 +18,7 @@ export const CourseSchema = z
     fullForm: z.string().optional(),
     intake: z.string("Intake Date is required" ),
     brochure: z.string().optional(),
+    feeStructure: z.string().optional(),
 
     shift: z.nativeEnum(EShift).default(EShift.MORNING),
     credit: z.string("Credit score is required" ),

@@ -4,155 +4,84 @@ import { ApiError } from "../../utils/apiError";
 import { ApiResponse } from "../../utils/apiResponse";
 import { prismaClient } from "../../server";
 import { deleteCourseImage } from "../../utils/deleteImage";
-import { departmentSchema, TeamsValidation } from "./teams.validatioin";
+import { TeamsValidation } from "./teams.validatioin";
 import { paginationSchema } from "../../validation/pagination.validation";
-import { EDepartment } from "@prisma/client";
+
 
 const add = asyncHandler(async (req: Request, res: Response) => {
   const parsed = TeamsValidation.safeParse(req.body);
   if (!parsed.success) {
     throw new ApiError(400, "Validation Failed", parsed.error.issues);
   }
-  const { department, ...rest } = parsed.data;
+
+  const {  departmentId, ...rest } = parsed.data;
+
+  // Check if department exists
+  const department = await prismaClient.teamDept.findUnique({
+    where: { id: Number(departmentId) },
+  });
+  if (!department) {
+    throw new ApiError(404, "Department not found");
+  }
+
+  // Get last order in department
   const last = await prismaClient.ourTeam.findFirst({
-    where: { department },
+    where: { departmentId: Number(departmentId) },
     orderBy: { order: "desc" },
     select: { order: true },
   });
   const nextOrder = (last?.order ?? 0) + 1;
+
   const team = await prismaClient.ourTeam.create({
     data: {
       ...rest,
-      department,
+      departmentId: Number(departmentId),
       order: nextOrder,
     },
   });
+
   res.status(201).json(new ApiResponse(201, team, "Team added successfully"));
 });
-export const changeTeamOrder = asyncHandler(async (req: Request, res: Response) => {
-  const id = Number(req.params.id);
-  const { newOrder } = req.body as { newOrder: number };
 
-  if (!Number.isInteger(newOrder) || newOrder < 1) {
-    throw new ApiError(400, "newOrder must be a positive integer");
-  }
-
-  const team = await prismaClient.ourTeam.findUnique({
-    where: { id },
-  });
-
-  if (!team) {
-    throw new ApiError(404, "Team member not found");
-  }
-
-  const department = team.department;
-  const oldOrder = team.order; // 👈 keep it as-is (can be null)
-
-  // ✅ Only skip if order already exists AND is same
-  if (oldOrder !== null && newOrder === oldOrder) {
-    return res.status(200).json(
-      new ApiResponse(200, team, "Order unchanged")
-    );
-  }
-
-  // Get max order in department
-  const maxOrderResult = await prismaClient.ourTeam.findFirst({
-    where: { department },
-    orderBy: { order: "desc" },
-    select: { order: true },
-  });
-
-  const maxOrder = maxOrderResult?.order ?? 0;
-
-  if (newOrder > maxOrder + 1) {
-    throw new ApiError(
-      400,
-      `Order cannot be greater than ${maxOrder + 1}`
-    );
-  }
-
-  await prismaClient.$transaction(async (tx) => {
-    // 🆕 CASE 1: order was NULL (new entry into ordering)
-    if (oldOrder === null) {
-      await tx.ourTeam.updateMany({
-        where: {
-          department,
-          order: {
-            gte: newOrder,
-          },
-        },
-        data: {
-          order: { increment: 1 },
-        },
-      });
-    }
-
-    // 🔁 CASE 2: moving down
-    else if (newOrder > oldOrder) {
-      await tx.ourTeam.updateMany({
-        where: {
-          department,
-          order: {
-            gt: oldOrder,
-            lte: newOrder,
-          },
-        },
-        data: {
-          order: { decrement: 1 },
-        },
-      });
-    }
-
-    // 🔼 CASE 3: moving up
-    else {
-      await tx.ourTeam.updateMany({
-        where: {
-          department,
-          order: {
-            gte: newOrder,
-            lt: oldOrder,
-          },
-        },
-        data: {
-          order: { increment: 1 },
-        },
-      });
-    }
-
-    // Finally update the target row
-    await tx.ourTeam.update({
-      where: { id },
-      data: { order: newOrder },
-    });
-  });
-
-  return res.status(200).json(
-    new ApiResponse(200, null, "Team order updated successfully")
-  );
-});
-
-
-
- const edit = asyncHandler(async (req: Request, res: Response) => {
+// -----------------------------
+// Edit a team member
+// -----------------------------
+// -----------------------------
+// Edit a team member
+// -----------------------------
+const edit = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
 
+  // Validate request body
   const parsed = TeamsValidation.safeParse(req.body);
   if (!parsed.success) {
     throw new ApiError(400, "Validation Failed", parsed.error.issues);
   }
 
-  const existing = await prismaClient.ourTeam.findUnique({
-    where: { id },
-  });
-
+  const existing = await prismaClient.ourTeam.findUnique({ where: { id } });
   if (!existing) throw new ApiError(404, "Team not found");
 
-  let updateData = { ...parsed.data };
+  // Copy data and ensure departmentId is number
+  let updateData: any = { ...parsed.data };
+  if (updateData.departmentId !== undefined && updateData.departmentId !== null) {
+    updateData.departmentId = Number(updateData.departmentId);
+    if (isNaN(updateData.departmentId)) {
+      throw new ApiError(400, "Invalid departmentId");
+    }
+  }
 
   // If department changes, set order to last in new department
-  if (parsed.data.department && parsed.data.department !== existing.department) {
+  if (
+    updateData.departmentId &&
+    updateData.departmentId !== existing.departmentId
+  ) {
+    const newDept = await prismaClient.teamDept.findUnique({
+      where: { id: updateData.departmentId },
+    });
+    if (!newDept) throw new ApiError(404, "New Department not found");
+
     const maxOrder = await prismaClient.ourTeam.findFirst({
-      where: { department: parsed.data.department },
+      where: { departmentId: updateData.departmentId },
       orderBy: { order: "desc" },
       select: { order: true },
     });
@@ -170,7 +99,76 @@ export const changeTeamOrder = asyncHandler(async (req: Request, res: Response) 
     .json(new ApiResponse(200, updated, "Team updated successfully"));
 });
 
+
+const changeTeamOrder = asyncHandler(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  const { newOrder } = req.body as { newOrder: number };
+
+  if (!Number.isInteger(newOrder) || newOrder < 1) {
+    throw new ApiError(400, "newOrder must be a positive integer");
+  }
+
+  const team = await prismaClient.ourTeam.findUnique({ where: { id } });
+  if (!team) throw new ApiError(404, "Team member not found");
+
+  const departmentId = team.departmentId;
+  if (!departmentId) throw new ApiError(400, "Team member has no department");
+
+  const oldOrder = team.order ?? 0;
+
+  if (oldOrder === newOrder) {
+    return res.status(200).json(
+      new ApiResponse(200, team, "Order unchanged")
+    );
+  }
+
+  // Get max order in this department
+  const maxOrderResult = await prismaClient.ourTeam.findFirst({
+    where: { departmentId },
+    orderBy: { order: "desc" },
+    select: { order: true },
+  });
+  const maxOrder = maxOrderResult?.order ?? 0;
+
+  if (newOrder > maxOrder + 1) {
+    throw new ApiError(400, `Order cannot be greater than ${maxOrder + 1}`);
+  }
+
+  await prismaClient.$transaction(async (tx) => {
+    if (oldOrder === 0) {
+      await tx.ourTeam.updateMany({
+        where: { departmentId, order: { gte: newOrder } },
+        data: { order: { increment: 1 } },
+      });
+    } else if (newOrder > oldOrder) {
+      await tx.ourTeam.updateMany({
+        where: { departmentId, order: { gt: oldOrder, lte: newOrder } },
+        data: { order: { decrement: 1 } },
+      });
+    } else {
+      await tx.ourTeam.updateMany({
+        where: { departmentId, order: { gte: newOrder, lt: oldOrder } },
+        data: { order: { increment: 1 } },
+      });
+    }
+
+    await tx.ourTeam.update({
+      where: { id },
+      data: { order: newOrder },
+    });
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, null, "Team order updated successfully")
+  );
+});
+
+
+// -----------------------------
+// Get paginated teams with optional department filter
+// -----------------------------
 const getTeam = asyncHandler(async (req: Request, res: Response) => {
+  // Validate pagination query
   const parsedPagination = paginationSchema.safeParse(req.query);
   if (!parsedPagination.success) {
     throw new ApiError(400, "Validation Failed", parsedPagination.error.issues);
@@ -178,38 +176,46 @@ const getTeam = asyncHandler(async (req: Request, res: Response) => {
   const { page, limit } = parsedPagination.data;
   const skip = (page - 1) * limit;
 
-  const parsedDept = departmentSchema.safeParse(
-    req.query.department?.toString().toUpperCase(),
-  );
-  if (!parsedDept.success) {
-    throw new ApiError(400, "Invalid department", parsedDept.error.issues);
-  }
-  const department = parsedDept.data;
+  // Department filter
+  let departmentFilter: any = {};
+  if (req.query.department) {
+    const departmentId = Number(req.query.department);
+    if (isNaN(departmentId)) throw new ApiError(400, "Invalid department ID");
 
+    const departmentExists = await prismaClient.teamDept.findUnique({
+      where: { id: departmentId },
+    });
+    if (!departmentExists) throw new ApiError(404, "Department not found");
+
+    // Use departmentId instead of department relation
+    departmentFilter = { departmentId };
+  }
+
+  // Search filter
   const search = req.query.search?.toString().toLowerCase().trim();
   const searchFilter = search
     ? {
         OR: [
-          { name: { contains: search } },
-          { position: { contains: search } },
+          { name: { contains: search, } },
+          { position: { contains: search, } },
         ],
       }
     : {};
 
-  const departmentFilter = department ? { department } : {};
+  const whereFilter = { AND: [departmentFilter, searchFilter] };
 
-  const whereFilter = { AND: [searchFilter, departmentFilter] };
-
-  const users = await prismaClient.ourTeam.findMany({
+  // Fetch teams
+  const teams = await prismaClient.ourTeam.findMany({
     where: whereFilter,
     skip,
     take: limit,
     orderBy: { order: "asc" },
+    include: { department: true }, // include department details
   });
 
+  // Total count and pagination info
   const total = await prismaClient.ourTeam.count({ where: whereFilter });
   const totalPages = Math.ceil(total / limit);
-
   const pagination = {
     total,
     page,
@@ -219,67 +225,41 @@ const getTeam = asyncHandler(async (req: Request, res: Response) => {
     hasPrevPage: page > 1,
   };
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, users, "Our Team fetched successfully", pagination),
-    );
+  return res.status(200).json(
+    new ApiResponse(200, teams, "Our Team fetched successfully", pagination)
+  );
 });
 
-const getTeamsByDepartment = asyncHandler(
-  async (req: Request, res: Response) => {
-    const teams = await prismaClient.ourTeam.findMany({
-      orderBy: { order: "asc" },
-    });
 
-    const grouped: Record<string, typeof teams> = {
-      MANAGEMENT: [],
-      ADMINISTRATION: [],
-      COMPUTING: [],
-    };
+const getTeamsByDepartment = asyncHandler(async (_req: Request, res: Response) => {
+  const teams = await prismaClient.ourTeam.findMany({
+    orderBy: { order: "asc" },
+    include: { department: true }, // include department relation
+  });
 
-    teams.forEach((team) => {
-      const dept = team.department.toUpperCase();
-      if (grouped[dept]) {
-        grouped[dept].push(team);
-      }
-    });
+  const grouped: Record<string, typeof teams> = {};
 
-    res
-      .status(200)
-      .json(
-        new ApiResponse(
-          200,
-          grouped,
-          "Teams grouped by department fetched successfully",
-        ),
-      );
-  },
-);
+  teams.forEach(team => {
+    const deptName = team.department?.name || "UNKNOWN";
+    if (!grouped[deptName]) grouped[deptName] = [];
+    grouped[deptName].push(team);
+  });
 
+  res.status(200).json(new ApiResponse(200, grouped, "Teams grouped by department fetched successfully"));
+});
+
+// -----------------------------
+// Upload images / portrait
+// -----------------------------
 const uploadTeamImages = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
+  if (!req.files || typeof req.files !== "object") throw new ApiError(400, "No files uploaded");
 
-  if (!req.files || typeof req.files !== "object") {
-    throw new ApiError(400, "No files uploaded");
-  }
-
-  const files = req.files as {
-    image?: Express.Multer.File[];
-    portrait?: Express.Multer.File[];
-  };
-
+  const files = req.files as { image?: Express.Multer.File[], portrait?: Express.Multer.File[] };
   const imageFile = files.image?.[0];
   const portraitFile = files.portrait?.[0];
 
-  if (!imageFile && !portraitFile) {
-    throw new ApiError(400, "Image or portrait is required");
-  }
-
-  const team = await prismaClient.ourTeam.findUnique({
-    where: { id },
-  });
-
+  const team = await prismaClient.ourTeam.findUnique({ where: { id } });
   if (!team) throw new ApiError(404, "Team not found");
 
   const updateData: any = {};
@@ -294,68 +274,51 @@ const uploadTeamImages = asyncHandler(async (req: Request, res: Response) => {
     updateData.portrait = `/public/teams/${portraitFile.filename}`;
   }
 
-  const updatedTeam = await prismaClient.ourTeam.update({
-    where: { id },
-    data: updateData,
-  });
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, updatedTeam, "Team images uploaded successfully"),
-    );
+  const updatedTeam = await prismaClient.ourTeam.update({ where: { id }, data: updateData });
+  res.status(200).json(new ApiResponse(200, updatedTeam, "Team images uploaded successfully"));
 });
 
+// -----------------------------
+// Update only team avatar
+// -----------------------------
 const updateteamImage = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-
   if (!req.file) throw new ApiError(400, "No image file provided");
 
-  const team = await prismaClient.ourTeam.findUnique({
+  const team = await prismaClient.ourTeam.findUnique({ where: { id } });
+  if (!team) throw new ApiError(404, "Team not found");
+
+  if (team.image) deleteCourseImage(team.image);
+  const updatedTeam = await prismaClient.ourTeam.update({
     where: { id },
-  });
-  if (!team) throw new ApiError(404, "team not found");
-
-  const filename = req.file.filename;
-  const imageUrl = `/public/teams/${filename}`;
-
-  if (team.image) {
-    deleteCourseImage(team.image);
-  }
-
-  const updatedCourse = await prismaClient.ourTeam.update({
-    where: { id },
-    data: { image: imageUrl },
+    data: { image: `/public/teams/${req.file.filename}` },
   });
 
-  res
-    .status(200)
-    .json(new ApiResponse(200, updatedCourse, "Avatar updated successfully"));
+  res.status(200).json(new ApiResponse(200, updatedTeam, "Avatar updated successfully"));
 });
 
+// -----------------------------
+// Delete a team member
+// -----------------------------
 const deleteTeam = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
-
-  const team = await prismaClient.ourTeam.findUnique({
-    where: { id },
-  });
-
+  const team = await prismaClient.ourTeam.findUnique({ where: { id } });
   if (!team) throw new ApiError(404, "Team not found");
 
   if (team.image) deleteCourseImage(team.image);
   if (team.portrait) deleteCourseImage(team.portrait);
 
   await prismaClient.ourTeam.delete({ where: { id } });
-
   res.status(200).json(new ApiResponse(200, null, "Team deleted successfully"));
 });
 
 export {
   add,
-  uploadTeamImages,
   edit,
   deleteTeam,
-  updateteamImage,
+  changeTeamOrder,
   getTeam,
   getTeamsByDepartment,
+  uploadTeamImages,
+  updateteamImage,
 };

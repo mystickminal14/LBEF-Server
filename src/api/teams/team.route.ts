@@ -43,4 +43,5 @@ teamRouter.put(
 );
 teamRouter.delete("/:id", [verifyJwt, requirePermission(EPermission.TEAMS)], deleteTeam);
 
+
 export default teamRouter;
