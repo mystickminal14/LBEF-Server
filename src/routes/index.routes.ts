@@ -24,10 +24,13 @@ import { feePlannerRouter } from "../api/fee-planner/planner.routes";
 import emailRoute from "../api/emails/emal.router";
 import scholarshipRouter from "../api/scholarship/scholarship-router";
 import deptRouter from "../api/teams/department.route";
+import courseCategoryRouter from "../api/course/category/course-category.route";
 
 const rootRouter: Router = Router();
 rootRouter.use("/auth", authRoutes);
 rootRouter.use("/users", userRoute);
+rootRouter.use("/course-categories", courseCategoryRouter);
+
 rootRouter.use("/courses", courseRouter);
 rootRouter.use("/news", newsRouter);
 rootRouter.use("/alumni", alumniRouter);

@@ -19,10 +19,10 @@ export const CourseSchema = z
     intake: z.string("Intake Date is required" ),
     brochure: z.string().optional(),
     feeStructure: z.string().optional(),
-
+    slug: z.string().optional(),
     shift: z.nativeEnum(EShift).default(EShift.MORNING),
     credit: z.string("Credit score is required" ),
         duration: z.string().optional(),
-    category: z.string().optional(),
+    categoryId: z.number("Category ID is required" ),
     semester: z.string().optional(),
   })

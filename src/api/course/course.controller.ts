@@ -23,8 +23,8 @@ const addCourse = asyncHandler(async (req: Request, res: Response) => {
     duration,
     degree,
     prefix,
-    details,feeStructure,
-    category,fullForm,
+    details,feeStructure,slug,
+    categoryId,fullForm,
     semester,
   } = parsed.data;
 
@@ -49,11 +49,11 @@ const addCourse = asyncHandler(async (req: Request, res: Response) => {
       details,
       shift,
       degree,
-      prefix,fullForm, intake,
+      prefix,fullForm, intake,slug,
     brochure,feeStructure,
       credit,
       duration: duration ?? "",
-      category: category ?? "",
+      categoryId: categoryId ?? "",
       semester: semester ?? "",
       order: nextOrder,
     },
@@ -79,7 +79,7 @@ const editCourse = asyncHandler(async (req: Request, res: Response) => {
     credit,
     duration, intake,
     brochure,feeStructure,
-    category,
+    categoryId,slug,
     degree,
     prefix,fullForm,
     details,
@@ -100,12 +100,12 @@ const editCourse = asyncHandler(async (req: Request, res: Response) => {
       title,feeStructure,
       degree, intake,
     brochure,
-      details,
+      details,slug,
       prefix,fullForm,
       shift,
       credit,
       duration: duration ?? "",
-      category: category ?? "",
+      categoryId: categoryId ?? "",
       semester: semester ?? "",
     },
   });
@@ -139,28 +139,35 @@ const getCourse = asyncHandler(async (req: Request, res: Response) => {
   const { page, limit } = parsed.data;
   const skip = (page - 1) * limit;
 
+  // Search
   let search = req.query.search?.toString().toLowerCase().trim() || "";
   const searchWords = search.split(" ").filter(Boolean);
 
-  const searchFilter = searchWords.length
-    ? {
-        AND: searchWords.map((word) => ({
-          OR: [
-            { prefix: { contains: word } },
-            { title: { contains: word } },
-            { category: { contains: word } },
-          ],
-        })),
-      }
-    : {};
+  const categoryId = req.query.categoryId ? Number(req.query.categoryId) : undefined;
+
+  const searchFilter = {
+    AND: [
+      // Search filter
+      ...(searchWords.length
+        ? searchWords.map((word) => ({
+            OR: [
+              { prefix: { contains: word, mode: "insensitive" } },
+              { title: { contains: word, mode: "insensitive" } },
+            ],
+          }))
+        : []),
+      // Category filter
+      ...(categoryId ? [{ categoryId }] : []),
+    ],
+  };
 
   const courses = await prismaClient.course.findMany({
     where: searchFilter,
     skip,
     take: limit,
     orderBy: [
-      { order: "asc" },       
-      { createdAt: "desc" },   
+      { order: "asc" },       // manual order
+      { createdAt: "desc" },  // latest first
     ],
   });
 
@@ -200,8 +207,6 @@ const getCourse = asyncHandler(async (req: Request, res: Response) => {
     )
   );
 });
-
-
 const getAllCourse = asyncHandler(async (_req: Request, res: Response) => {
   const courses = await prismaClient.course.findMany({
     orderBy: [{ order: "asc" }, { createdAt: "desc" }],
@@ -356,6 +361,77 @@ const changeCourseOrder = asyncHandler(async (req: Request, res: Response) => {
     new ApiResponse(200, null, "Course order updated successfully")
   );
 });
+const copyCourse = asyncHandler(async (req: Request, res: Response) => {
+  const courseId = Number(req.params.id);
+
+  const sourceCourse = await prismaClient.course.findUnique({
+    where: { id: courseId },
+  });
+
+  if (!sourceCourse) {
+    throw new ApiError(404, "Source course not found");
+  }
+
+  await prismaClient.$transaction(async (tx) => {
+    
+    const lastCourse = await tx.course.findFirst({
+      orderBy: { order: "desc" },
+      select: { order: true },
+    });
+
+    const newOrder = (lastCourse?.order ?? 0) + 1;
+
+    const newCourse = await tx.course.create({
+      data: {
+        title: `${sourceCourse.title} (Copy)`,
+        shift: sourceCourse.shift,
+        credit: sourceCourse.credit,
+        intake: sourceCourse.intake,
+        brochure: sourceCourse.brochure,
+        duration: sourceCourse.duration,
+        degree: sourceCourse.degree,
+        prefix: sourceCourse.prefix,
+        fullForm: sourceCourse.fullForm,
+        details: sourceCourse.details,
+        feeStructure: sourceCourse.feeStructure,
+        categoryId: sourceCourse.categoryId,
+        semester: sourceCourse.semester,
+        image: sourceCourse.image,
+        order: newOrder,
+      },
+    });
+
+    // -----------------------------
+    // 2️⃣ Copy all detail blocks
+    // -----------------------------
+    const blocks = await tx.courseDetailBlock.findMany({
+      where: { courseId },
+      orderBy: { order: "asc" },
+    });
+
+    const idMap: Record<number, number> = {};
+
+    for (const block of blocks) {
+      const created = await tx.courseDetailBlock.create({
+        data: {
+          courseId: newCourse.id,
+          parentId: block.parentId ? idMap[block.parentId] : null,
+          title: block.title,
+          category: block.category,
+          content: block.content,
+          type: block.type,
+          order: block.order,
+        },
+      });
+
+      idMap[block.id] = created.id;
+    }
+  });
+
+  res.status(201).json(
+    new ApiResponse(201, null, "Course duplicated successfully")
+  );
+});
 
 export {
   addCourse,
@@ -366,5 +442,5 @@ export {
   getAllCourse,
   updateCourseImage,
   editCourse,
-  deleteCourse,
+  deleteCourse,copyCourse
 };

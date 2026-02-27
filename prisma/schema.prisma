@@ -112,28 +112,48 @@ enum EHOLIDAYTYPE {
   ACADEMIC
   ADMINISTRATIVE
 }
-model Course {
-  id        Int                 @id @default(autoincrement())
-  title     String              @unique
-  shift     EShift
+model CourseCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  status    EStatus
   order     Int?
-  duration  String?
-  category  String?
-  fullForm  String?
-  details   String?             @db.VarChar(500)
-  prefix    String?
-  degree    String?
-  semester  String?
-  intake    String?
-  feeStructure  String?
-  brochure  String?
-  credit    String
-  image     String?
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
-  blocks    CourseDetailBlock[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@fulltext([title, category])
+  courses   Course[]   // ← one category has many courses
+}
+
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String   @unique
+  shift       EShift
+  order       Int?
+  duration    String?
+  slug        String?   @unique
+  categoryId  Int?
+  category    CourseCategory? @relation(fields: [categoryId], references: [id])
+
+  fullForm    String?
+  details     String?  @db.VarChar(500)
+  prefix      String?
+  degree      String?
+  semester    String?
+  intake      String?
+  feeStructure String?
+  brochure    String?
+  credit      String
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  blocks      CourseDetailBlock[]
+
+  @@fulltext([title])
+}
+enum EContentCategory{
+  COURSE_STRUCTURE
+  CAREER_OPTIONS
+  FEE_STRUCTURE
+  ELIGIBLITY_CRITERIA
 }
 model CourseDetailBlock {
   id       Int    @id @default(autoincrement())
@@ -149,6 +169,7 @@ model CourseDetailBlock {
   type    BlockType
 
   order Int @default(0)
+  category  EContentCategory
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
