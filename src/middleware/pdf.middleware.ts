@@ -26,11 +26,8 @@ const pdfStorage = multer.diskStorage({
   },
 
   filename: function (req: Request, file, cb) {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const filename = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2)}${ext}`;
-    cb(null, filename);
+      cb(null, file.originalname);
+
   },
 });
 

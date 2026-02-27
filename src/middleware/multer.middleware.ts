@@ -38,20 +38,24 @@ const storage = multer.diskStorage({
     if (req.baseUrl.includes("/gallery")) {
       const slug = req.body.slug;
       if (!slug) return cb(new Error("Gallery type slug required"), "");
+    const sanitizedOriginalName = file.originalname.replace(/[^a-zA-Z0-9.\-_\s]/g, '');
 
-      const filename = `${slug}-${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(2)}${ext}`;
+    
 
-      return cb(null, filename);
+      return cb(null, sanitizedOriginalName);
     }
 
-    // Default filename for other routes
-    const filename = `${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2)}${ext}`;
-
-    cb(null, filename);
+    // ✅ For all other routes: keep original filename
+    // Sanitize the original filename to remove any path traversal characters
+    const sanitizedOriginalName = file.originalname.replace(/[^a-zA-Z0-9.\-_\s]/g, '');
+    
+    // Option A: Use original name exactly (risk of overwrites if same filename uploaded)
+    cb(null, sanitizedOriginalName);
+    
+    // Option B: Add timestamp prefix to prevent overwrites while keeping original name readable
+    // const timestamp = Date.now();
+    // const filename = `${timestamp}-${sanitizedOriginalName}`;
+    // cb(null, filename);
   },
 });
 

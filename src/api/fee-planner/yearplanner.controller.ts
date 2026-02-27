@@ -32,6 +32,7 @@ export const createFeeYear = asyncHandler(
   },
 );
 export const getFeeYears = asyncHandler(async (_req, res) => {
+  console.log("feeyears")
   const data = await prismaClient.feeYear.findMany({
     orderBy: { createdAt: "desc" },
   });

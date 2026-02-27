@@ -17,34 +17,122 @@ export const createFeePlanner = asyncHandler(
     }
 
     const { feeYearId, semester, course } = parsed.data;
+    
     if (!req.file) throw new ApiError(400, "No file provided");
+    
     const filename = req.file.filename;
     const file = `/public/fee-planner/${filename}`;
-    const courseCheck = await prismaClient.feeYear.findUnique({
-      where: { id: Number(feeYearId) },
+    
+    const feeYearIdNum = Number(feeYearId);
+    
+    // Check if Fee Year exists
+    const feeYearCheck = await prismaClient.feeYear.findUnique({
+      where: { id: feeYearIdNum },
     });
-    if (!courseCheck) {
+    
+    if (!feeYearCheck) {
       throw new ApiError(404, "Fee Year not found");
     }
+    
+    // Check for duplicate semester in the SAME fee year and course
     const semesterCheck = await prismaClient.feePlanner.findFirst({
-      where: { semester: semester, course: course },
+      where: { 
+        semester: semester, 
+        course: course,
+        feeYearId: feeYearIdNum
+      },
     });
 
     if (semesterCheck) {
       throw new ApiError(
-        404,
-        "Acdemic Planner for this semester already exists not found",
+        400,
+        `Fee planner for semester "${semester}" with course "${course}" already exists for this fee year`,
       );
     }
-    const acaId = Number(feeYearId);
-
-    const FeeYear = await prismaClient.feePlanner.create({
-      data: { course, semester, feeYearId: acaId, file: file },
+    
+    const feePlanner = await prismaClient.feePlanner.create({
+      data: { 
+        course, 
+        semester, 
+        feeYearId: feeYearIdNum, 
+        file: file 
+      },
     });
 
     res
       .status(201)
-      .json(new ApiResponse(201, FeeYear, "Fee Semester created successfully"));
+      .json(new ApiResponse(201, feePlanner, "Fee Semester created successfully"));
+  },
+);
+
+export const updateFeePlanner = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+
+    const parsed = CreateFeePlannerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new ApiError(400, "Validation failed", parsed.error.issues);
+    }
+
+    const { feeYearId, course, semester } = parsed.data;
+    const feeYearIdNum = Number(feeYearId);
+
+    const planner = await prismaClient.feePlanner.findUnique({
+      where: { id },
+    });
+
+    if (!planner) {
+      throw new ApiError(404, "Fee planner not found");
+    }
+
+    // Check if Fee Year exists
+    const feeYearCheck = await prismaClient.feeYear.findUnique({
+      where: { id: feeYearIdNum },
+    });
+    
+    if (!feeYearCheck) {
+      throw new ApiError(404, "Fee Year not found");
+    }
+
+    // Check for duplicate semester in the SAME fee year and course (excluding current record)
+    const semesterCheck = await prismaClient.feePlanner.findFirst({
+      where: {
+        semester: semester,
+        course: course,
+        feeYearId: feeYearIdNum,
+        NOT: { id },
+      },
+    });
+
+    if (semesterCheck) {
+      throw new ApiError(
+        409, 
+        `Fee planner for semester "${semester}" with course "${course}" already exists for this fee year`
+      );
+    }
+
+    let filePath = planner.file;
+
+    if (req.file) {
+      if (planner.file) {
+        deletePDF(planner.file);
+      }
+      filePath = `/public/fee-planner/${req.file.filename}`;
+    }
+
+    const updatedPlanner = await prismaClient.feePlanner.update({
+      where: { id },
+      data: {
+        semester,
+        course,
+        feeYearId: feeYearIdNum,
+        file: filePath,
+      },
+    });
+
+    res.json(
+      new ApiResponse(200, updatedPlanner, "Fee planner updated successfully"),
+    );
   },
 );
 export const getFeePlannersPagination = asyncHandler(
@@ -97,63 +185,7 @@ export const getPlanners = asyncHandler(async (req: Request, res: Response) => {
 
   res.json(new ApiResponse(200, planners, "Fee planners fetched successfully"));
 });
-export const updateFeePlanner = asyncHandler(
-  async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
 
-    const parsed = CreateFeePlannerSchema.safeParse(req.body);
-    if (!parsed.success) {
-      throw new ApiError(400, "Validation failed", parsed.error.issues);
-    }
-
-    const { feeYearId, course, semester } = parsed.data;
-    const acaId = Number(feeYearId);
-
-    const planner = await prismaClient.feePlanner.findUnique({
-      where: { id },
-    });
-
-    if (!planner) {
-      throw new ApiError(404, "Fee planner not found");
-    }
-
-    const semesterCheck = await prismaClient.feePlanner.findFirst({
-      where: {
-        semester,
-        course,
-        feeYearId: acaId,
-        NOT: { id },
-      },
-    });
-
-    if (semesterCheck) {
-      throw new ApiError(409, "Fee planner for this semester already exists");
-    }
-
-    let filePath = planner.file;
-
-    if (req.file) {
-      if (planner.file) {
-        deletePDF(planner.file);
-      }
-      filePath = `/public/fee-planner/${req.file.filename}`;
-    }
-
-    const updatedPlanner = await prismaClient.feePlanner.update({
-      where: { id },
-      data: {
-        semester,
-        course,
-        feeYearId: acaId,
-        file: filePath,
-      },
-    });
-
-    res.json(
-      new ApiResponse(200, updatedPlanner, "Fee planner updated successfully"),
-    );
-  },
-);
 
 export const deleteFeePlanner = asyncHandler(
   async (req: Request, res: Response) => {

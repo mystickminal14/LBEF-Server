@@ -22,7 +22,7 @@ export const CourseSchema = z
     slug: z.string().optional(),
     shift: z.nativeEnum(EShift).default(EShift.MORNING),
     credit: z.string("Credit score is required" ),
-        duration: z.string().optional(),
+    duration: z.string().optional(),
     categoryId: z.number("Category ID is required" ),
     semester: z.string().optional(),
   })

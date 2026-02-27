@@ -7,53 +7,92 @@ import { ApiResponse } from "../../utils/apiResponse";
 import { deletePDF } from "../../utils/deletepdf";
 import { CreateAcademicPlannerSchema } from "./planner.validation";
 import { paginationSchema } from "../../validation/pagination.validation";
-
 export const createAcademicPlanner = asyncHandler(
   async (req: Request, res: Response) => {
+    console.log("=== CREATE ACADEMIC PLANNER CALLED ===");
+    console.log("Current time:", new Date().toISOString());
+    
     const parsed = CreateAcademicPlannerSchema.safeParse(req.body);
 
     if (!parsed.success) {
       throw new ApiError(400, "Validation failed", parsed.error.issues);
     }
 
-    const { academicYearId, semester,plannerCourseId, intake } = parsed.data;
+    const { academicYearId, semester, plannerCourseId, intake } = parsed.data;
+    
+    console.log("Received data:", { academicYearId, semester, plannerCourseId, intake });
+    
     if (!req.file) throw new ApiError(400, "No file provided");
+    
     const filename = req.file.filename;
     const file = `/public/planner/${filename}`;
-    const course = await prismaClient.academicYear.findUnique({
-      where: { id: Number(academicYearId) },
+    
+    const acaId = Number(academicYearId);
+    const plaId = plannerCourseId ? Number(plannerCourseId) : null;
+    
+    console.log("Converted IDs:", { acaId, plaId });
+    
+    // Check if Academic Year exists
+    const academicYearExists = await prismaClient.academicYear.findUnique({
+      where: { id: acaId },
     });
-  if (!course) {
+    if (!academicYearExists) {
       throw new ApiError(404, "Academic Year not found");
     }
-        const coursePlanner = await prismaClient.plannerCourse.findUnique({
-      where: { id: Number(plannerCourseId) },
-    });
-
-    if (!coursePlanner) {
-      throw new ApiError(404, "Planner course not found");
+    console.log("Academic year exists:", academicYearExists);
+    
+    // Check if Planner Course exists
+    if (plaId) {
+      const coursePlanner = await prismaClient.plannerCourse.findUnique({
+        where: { id: plaId },
+      });
+      if (!coursePlanner) {
+        throw new ApiError(404, "Planner course not found");
+      }
+      console.log("Planner course exists:", coursePlanner);
     }
   
-     const semesterCheck = await prismaClient.academicPlanner.findFirst({
-      where: { semester: semester,plannerCourseId:Number(plannerCourseId) },
+    console.log("Checking for duplicates with:", {
+      semester,
+      plannerCourseId: plaId,
+      academicYearId: acaId
     });
+    
+    const semesterCheck = await prismaClient.academicPlanner.findFirst({
+      where: { 
+        semester: semester,
+        ...(plaId ? { plannerCourseId: plaId } : { plannerCourseId: null }),
+        academicYearId: acaId
+      },
+    });
+
+    console.log("Duplicate check result:", semesterCheck);
 
     if (semesterCheck) {
-      throw new ApiError(404, "Acdemic Planner for this semester already exists not found");
+      console.log("DUPLICATE FOUND - Throwing error");
+      throw new ApiError(400, `Academic Planner for semester "${semester}" already exists for academic year ${acaId} with course ${plaId}`);
     }
-    const acaId=Number(academicYearId)
-    const pla=Number(plannerCourseId)
 
-    const academicYear = await prismaClient.academicPlanner.create({
-      data: { intake, semester, plannerCourseId:pla,academicYearId:acaId ,file: file},
+    // Create the academic planner
+    console.log("Creating new academic planner...");
+    const academicPlanner = await prismaClient.academicPlanner.create({
+      data: { 
+        intake, 
+        semester, 
+        plannerCourseId: plaId, 
+        academicYearId: acaId, 
+        file: file 
+      },
     });
+
+    console.log("Created successfully:", academicPlanner);
 
     res
       .status(201)
       .json(
         new ApiResponse(
           201,
-          academicYear,
+          academicPlanner,
           "Academic Semester created successfully",
         ),
       );
@@ -62,7 +101,7 @@ export const createAcademicPlanner = asyncHandler(
 export const getAcademicPlannersPagination = asyncHandler(
   async (req: Request, res: Response) => {
     const parsed = paginationSchema.safeParse(req.query);
-
+  console.log("cjecl")
     if (!parsed.success) {
       return res.status(400).json({
         message: "Invalid pagination parameters",
@@ -133,15 +172,22 @@ export const getAcademicPlannersPagination = asyncHandler(
   })
 export const updateAcademicPlanner = asyncHandler(
   async (req: Request, res: Response) => {
+    console.log("=== UPDATE ACADEMIC PLANNER CALLED ===");
+    
     const id = Number(req.params.id);
+    console.log("Updating planner ID:", id);
 
     const parsed = CreateAcademicPlannerSchema.safeParse(req.body);
     if (!parsed.success) {
       throw new ApiError(400, "Validation failed", parsed.error.issues);
     }
 
-    const { academicYearId,plannerCourseId, semester, intake } = parsed.data;
+    const { academicYearId, plannerCourseId, semester, intake } = parsed.data;
+    console.log("Update data:", { academicYearId, plannerCourseId, semester, intake });
+    
     const acaId = Number(academicYearId);
+    const plaId = plannerCourseId ? Number(plannerCourseId) : null;
+    console.log("Converted IDs:", { acaId, plaId });
 
     const planner = await prismaClient.academicPlanner.findUnique({
       where: { id },
@@ -150,46 +196,74 @@ export const updateAcademicPlanner = asyncHandler(
     if (!planner) {
       throw new ApiError(404, "Academic planner not found");
     }
-    const pla=Number(plannerCourseId)
+    console.log("Existing planner:", planner);
 
+    // Check if Planner Course exists
+    if (plaId) {
+      const coursePlanner = await prismaClient.plannerCourse.findUnique({
+        where: { id: plaId },
+      });
+      if (!coursePlanner) {
+        throw new ApiError(404, "Planner course not found");
+      }
+      console.log("Planner course exists:", coursePlanner);
+    }
+
+    // Check for duplicate
+    console.log("Checking for duplicates with:", {
+      semester,
+      plannerCourseId: plaId,
+      academicYearId: acaId,
+      excludingId: id
+    });
+    
     const semesterCheck = await prismaClient.academicPlanner.findFirst({
       where: {
-        semester,
+        semester: semester,
         academicYearId: acaId,
+        ...(plaId ? { plannerCourseId: plaId } : { plannerCourseId: null }),
         NOT: { id },
       },
     });
 
+    console.log("Duplicate check result:", semesterCheck);
+
     if (semesterCheck) {
-      throw new ApiError(409, "Academic planner for this semester already exists");
+      throw new ApiError(409, `Academic Planner for semester "${semester}" already exists for academic year ${acaId} with course ${plaId}`);
     }
 
     let filePath = planner.file;
+    console.log("Current file path:", filePath);
 
     if (req.file) {
+      console.log("New file uploaded:", req.file.filename);
       if (planner.file) {
+        console.log("Deleting old file:", planner.file);
         deletePDF(planner.file);
       }
       filePath = `/public/planner/${req.file.filename}`;
     }
+
+    console.log("Final file path:", filePath);
 
     const updatedPlanner = await prismaClient.academicPlanner.update({
       where: { id },
       data: {
         intake,
         semester,
-        plannerCourseId:pla,
+        plannerCourseId: plaId,
         academicYearId: acaId,
         file: filePath,
       },
     });
+
+    console.log("Updated successfully:", updatedPlanner);
 
     res.json(
       new ApiResponse(200, updatedPlanner, "Academic planner updated successfully")
     );
   }
 );
-
 
 export const deleteAcademicPlanner = asyncHandler(
   async (req: Request, res: Response) => {
