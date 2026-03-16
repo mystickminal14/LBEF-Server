@@ -406,6 +406,9 @@ model GalleryType {
   id        Int            @id @default(autoincrement())
   name      String         @unique
   slug      String         @unique
+  year      String         
+  month     String
+  day      String?
   galleries PhotoGallery[]
   status    EStatus        @default(ENABLED)
   createdAt DateTime       @default(now())
@@ -427,9 +430,9 @@ model PhotoGallery {
 
 model LbefConnect {
   id        Int      @id @default(autoincrement())
-  volume    String?
+  volume    Int?
   duration  String?
-  issue     String?
+  issue     Int?
   image     String?
   file      String?
   createdAt DateTime @default(now())

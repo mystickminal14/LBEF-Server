@@ -108,6 +108,7 @@ const getData = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getGalleryByType = asyncHandler(async (req: Request, res: Response) => {
+  // 1️⃣ Validate pagination
   const parsed = paginationSchema.safeParse(req.query);
   if (!parsed.success) {
     throw new ApiError(400, "Validation Failed", parsed.error.issues);
@@ -116,11 +117,25 @@ export const getGalleryByType = asyncHandler(async (req: Request, res: Response)
   const { page, limit } = parsed.data;
   const skip = (page - 1) * limit;
 
-  const types = await prismaClient.galleryType.findMany({
+  // 2️⃣ Month order mapping
+  const monthOrder: Record<string, number> = {
+    January: 1,
+    February: 2,
+    March: 3,
+    April: 4,
+    May: 5,
+    June: 6,
+    July: 7,
+    August: 8,
+    September: 9,
+    October: 10,
+    November: 11,
+    December: 12,
+  };
+
+  // 3️⃣ Fetch all enabled types
+  let types = await prismaClient.galleryType.findMany({
     where: { status: "ENABLED" },
-    skip,
-    take: limit,
-    orderBy: { createdAt: "desc" },
     include: {
       galleries: {
         take: 10,
@@ -129,34 +144,53 @@ export const getGalleryByType = asyncHandler(async (req: Request, res: Response)
     },
   });
 
-  const formatted = types.map((type) => ({
+  // 4️⃣ Sort using year → month → day
+  types.sort((a, b) => {
+    const yearA = Number(a.year);
+    const yearB = Number(b.year);
+    if (yearA !== yearB) return yearB - yearA;
+
+    if (monthOrder[a.month] !== monthOrder[b.month]) {
+      return monthOrder[b.month] - monthOrder[a.month];
+    }
+
+    const dayA = a.day ? Number(a.day) : 0;
+    const dayB = b.day ? Number(b.day) : 0;
+
+    return dayB - dayA;
+  });
+
+  // 5️⃣ Manual pagination
+  const total = types.length;
+  const totalPages = Math.ceil(total / limit);
+  const paginatedTypes = types.slice(skip, skip + limit);
+
+  // 6️⃣ Format response
+  const formatted = paginatedTypes.map((type) => ({
     type: {
       id: type.id,
       name: type.name,
-     
     },
     images: type.galleries.map(withPublicImage),
   }));
 
-  const total = await prismaClient.galleryType.count({
-    where: { status: "ENABLED" },
-  });
+  // 7️⃣ Pagination metadata
+  const pagination = {
+    total,
+    page,
+    limit,
+    totalPages,
+    hasNextPage: page < totalPages,
+    hasPrevPage: page > 1,
+  };
 
-  const totalPages = Math.ceil(total / limit);
-
+  // 8️⃣ Response
   return res.status(200).json(
     new ApiResponse(
       200,
       formatted,
       "Gallery grouped by type fetched successfully",
-      {
-        total,
-        page,
-        limit,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-      }
+      pagination
     )
   );
 });

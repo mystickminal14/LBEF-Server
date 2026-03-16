@@ -16,13 +16,11 @@ const getDwnload = asyncHandler(async (req: Request, res: Response) => {
   const { page, limit } = parsed.data;
   const skip = (page - 1) * limit;
 
-  const search = req.query.search?.toString().trim() || "";
-
+  const search = req.query.search?.toString().toLowerCase().trim();
   const where = search
     ? {
         name: {
           contains: search,
-          mode: "insensitive",
         },
       }
     : {};
@@ -31,7 +29,7 @@ const getDwnload = asyncHandler(async (req: Request, res: Response) => {
     where,
     skip,
     take: limit,
-    orderBy: { createdAt: "desc" },
+    orderBy: { id: "desc" },
   });
 
   const total = await prismaClient.downloads.count({ where });
@@ -69,11 +67,11 @@ const uploadFile = asyncHandler(async (req: Request, res: Response) => {
   const data: {
     name: string;
     file?: string | null;
-    link?: string | null;
+    link?: string ;
   } = {
     name,
     file: null,
-    link: null,
+    link,
   };
 
   if (file) {

@@ -43,16 +43,10 @@ const add = asyncHandler(async (req: Request, res: Response) => {
   res.status(201).json(new ApiResponse(201, team, "Team added successfully"));
 });
 
-// -----------------------------
-// Edit a team member
-// -----------------------------
-// -----------------------------
-// Edit a team member
-// -----------------------------
+
 const edit = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
 
-  // Validate request body
   const parsed = TeamsValidation.safeParse(req.body);
   if (!parsed.success) {
     throw new ApiError(400, "Validation Failed", parsed.error.issues);
@@ -70,7 +64,6 @@ const edit = asyncHandler(async (req: Request, res: Response) => {
     }
   }
 
-  // If department changes, set order to last in new department
   if (
     updateData.departmentId &&
     updateData.departmentId !== existing.departmentId

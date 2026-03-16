@@ -54,21 +54,35 @@ const uploadImage = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const getFiles = asyncHandler(async (req: Request, res: Response) => {
-const parsed = paginationSchema.safeParse(req.query);
-  
-    if (!parsed.success) {
-      throw new ApiError(400, "Validation Failed", parsed.error.issues);
-    }
-    const { page, limit } = parsed.data;
-    const skip = (page - 1) * limit;
+  const fetchAll = req.query.all === "true";
 
-  const users = await prismaClient.lbefConnect.findMany({
-    skip,
-    take: limit,
-    orderBy: { createdAt: "desc" },
-  });
+  if (fetchAll) {
+    const connects = await prismaClient.lbefConnect.findMany({
+      orderBy: [{ volume: "desc" }, { issue: "desc" }],
+    });
 
-  const total = await prismaClient.lbefConnect.count();
+    return res
+      .status(200)
+      .json(new ApiResponse(200, connects, "Connect fetched successfully",));
+  }
+
+  const parsed = paginationSchema.safeParse(req.query);
+
+  if (!parsed.success) {
+    throw new ApiError(400, "Validation Failed", parsed.error.issues);
+  }
+
+  const { page, limit } = parsed.data;
+  const skip = (page - 1) * limit;
+
+  const [connects, total] = await Promise.all([
+    prismaClient.lbefConnect.findMany({
+      skip,
+      take: limit,
+      orderBy: [{ volume: "desc" }, { issue: "desc" }],
+    }),
+    prismaClient.lbefConnect.count(),
+  ]);
 
   const totalPages = Math.ceil(total / limit);
 
@@ -83,9 +97,7 @@ const parsed = paginationSchema.safeParse(req.query);
 
   return res
     .status(200)
-    .json(
-      new ApiResponse(200, users, "Conect fetched successfully", pagination)
-    );
+    .json(new ApiResponse(200, connects, "Connect fetched successfully", pagination));
 });
 const deleteFile = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(req.params.id);
