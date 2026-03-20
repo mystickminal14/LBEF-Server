@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE `Permission` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `name` ENUM('USERS', 'COURSES', 'TEAMS', 'ALUMNI', 'PLANNER_COURSE', 'NEWS', 'ALMUNI_FORM', 'JOURNALS', 'EDITORIAL_BOARD', 'CONNECT', 'GALLERY', 'SCHOLARSHIP', 'NOTICE', 'CONTACT', 'HOLIDAY', 'RECOGNITION', 'ACHIEVEMENT', 'INTAKE', 'DOCUMENTS', 'ACADEMIC_PLANNER', 'FEE_PLANNER', 'DOWNLOADS') NOT NULL,
+    `name` ENUM('USERS', 'COURSES', 'TEAMS', 'TEAM_DEPT', 'ALUMNI', 'PLANNER_COURSE', 'NEWS', 'ALMUNI_FORM', 'JOURNALS', 'EDITORIAL_BOARD', 'CONNECT', 'GALLERY', 'SCHOLARSHIP', 'NOTICE', 'CONTACT', 'HOLIDAY', 'RECOGNITION', 'ACHIEVEMENT', 'INTAKE', 'DOCUMENTS', 'ACADEMIC_PLANNER', 'FEE_PLANNER', 'DOWNLOADS') NOT NULL,
 
     UNIQUE INDEX `Permission_name_key`(`name`),
     PRIMARY KEY (`id`)
@@ -34,23 +34,43 @@ CREATE TABLE `User` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `CourseCategory` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+    `status` ENUM('ENABLED', 'DISABLED') NOT NULL,
+    `order` INTEGER NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `CourseCategory_name_key`(`name`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Course` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `title` VARCHAR(191) NOT NULL,
     `shift` ENUM('MORNING', 'EVENING', 'BOTH') NOT NULL,
+    `order` INTEGER NULL,
     `duration` VARCHAR(191) NULL,
-    `category` VARCHAR(191) NULL,
+    `slug` VARCHAR(191) NULL,
+    `categoryId` INTEGER NULL,
+    `fullForm` VARCHAR(191) NULL,
     `details` VARCHAR(500) NULL,
     `prefix` VARCHAR(191) NULL,
     `degree` VARCHAR(191) NULL,
     `semester` VARCHAR(191) NULL,
+    `intake` VARCHAR(191) NULL,
+    `feeStructure` VARCHAR(191) NULL,
+    `brochure` VARCHAR(191) NULL,
     `credit` VARCHAR(191) NOT NULL,
     `image` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `Course_title_key`(`title`),
-    FULLTEXT INDEX `Course_title_category_idx`(`title`, `category`),
+    UNIQUE INDEX `Course_slug_key`(`slug`),
+    FULLTEXT INDEX `Course_title_idx`(`title`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -63,6 +83,7 @@ CREATE TABLE `CourseDetailBlock` (
     `content` VARCHAR(10000) NULL,
     `type` ENUM('HEADING', 'SUBHEADING', 'PARAGRAPH', 'LIST') NOT NULL,
     `order` INTEGER NOT NULL DEFAULT 0,
+    `category` ENUM('COURSE_STRUCTURE', 'CAREER_OPTIONS', 'FEE_STRUCTURE', 'ELIGIBLITY_CRITERIA') NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -108,6 +129,7 @@ CREATE TABLE `Recognition` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
     `description` VARCHAR(191) NOT NULL,
+    `type` ENUM('RECOGNITION', 'PERMISSION') NULL,
     `image` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -116,11 +138,24 @@ CREATE TABLE `Recognition` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `TeamDept` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+    `order` INTEGER NOT NULL,
+    `status` ENUM('ENABLED', 'DISABLED') NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `TeamDept_name_key`(`name`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `OurTeam` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
     `position` VARCHAR(191) NOT NULL,
-    `department` ENUM('MANAGEMENT', 'ADMINISTRATION', 'COMPUTING') NOT NULL,
+    `departmentId` INTEGER NULL,
     `bio` VARCHAR(1000) NULL,
     `image` VARCHAR(191) NULL,
     `portrait` VARCHAR(191) NULL,
@@ -129,6 +164,7 @@ CREATE TABLE `OurTeam` (
     `phone` VARCHAR(191) NULL,
     `email` VARCHAR(191) NULL,
     `linkedIn` VARCHAR(191) NULL,
+    `order` INTEGER NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -167,7 +203,8 @@ CREATE TABLE `holiday` (
 -- CreateTable
 CREATE TABLE `downloads` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `file` VARCHAR(191) NOT NULL,
+    `file` VARCHAR(191) NULL,
+    `link` VARCHAR(191) NULL,
     `name` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -296,6 +333,9 @@ CREATE TABLE `GalleryType` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(191) NOT NULL,
     `slug` VARCHAR(191) NOT NULL,
+    `year` VARCHAR(191) NOT NULL,
+    `month` VARCHAR(191) NOT NULL,
+    `day` VARCHAR(191) NULL,
     `status` ENUM('ENABLED', 'DISABLED') NOT NULL DEFAULT 'ENABLED',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
@@ -320,9 +360,9 @@ CREATE TABLE `PhotoGallery` (
 -- CreateTable
 CREATE TABLE `LbefConnect` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `volume` VARCHAR(191) NULL,
+    `volume` INTEGER NULL,
     `duration` VARCHAR(191) NULL,
-    `issue` VARCHAR(191) NULL,
+    `issue` INTEGER NULL,
     `image` VARCHAR(191) NULL,
     `file` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -390,7 +430,9 @@ CREATE TABLE `AlumniForm` (
     `mobileNo` VARCHAR(191) NOT NULL,
     `presentEmployer` VARCHAR(191) NULL,
     `designation` VARCHAR(191) NULL,
+    `content` VARCHAR(1000) NULL,
     `presentCountry` VARCHAR(191) NULL,
+    `image` VARCHAR(191) NULL,
     `registrationDate` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `status` ENUM('ENABLED', 'DISABLED') NOT NULL DEFAULT 'ENABLED',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -411,6 +453,7 @@ CREATE TABLE `ScholarshipSchedule` (
     `lastDate` VARCHAR(191) NOT NULL,
     `canDate` VARCHAR(191) NOT NULL,
     `admissionDate` VARCHAR(191) NOT NULL,
+    `status` ENUM('OPEN', 'CLOSED') NOT NULL,
     `examDate` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
@@ -425,10 +468,16 @@ ALTER TABLE `UserPermission` ADD CONSTRAINT `UserPermission_userId_fkey` FOREIGN
 ALTER TABLE `UserPermission` ADD CONSTRAINT `UserPermission_permissionId_fkey` FOREIGN KEY (`permissionId`) REFERENCES `Permission`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Course` ADD CONSTRAINT `Course_categoryId_fkey` FOREIGN KEY (`categoryId`) REFERENCES `CourseCategory`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `CourseDetailBlock` ADD CONSTRAINT `CourseDetailBlock_courseId_fkey` FOREIGN KEY (`courseId`) REFERENCES `Course`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `CourseDetailBlock` ADD CONSTRAINT `CourseDetailBlock_parentId_fkey` FOREIGN KEY (`parentId`) REFERENCES `CourseDetailBlock`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `OurTeam` ADD CONSTRAINT `OurTeam_departmentId_fkey` FOREIGN KEY (`departmentId`) REFERENCES `TeamDept`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `AcademicPlanner` ADD CONSTRAINT `AcademicPlanner_academicYearId_fkey` FOREIGN KEY (`academicYearId`) REFERENCES `AcademicYear`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

@@ -35,6 +35,7 @@ const add = asyncHandler(async (req: Request, res: Response) => {
   const team = await prismaClient.ourTeam.create({
     data: {
       ...rest,
+      status: "ENABLED",
       departmentId: Number(departmentId),
       order: nextOrder,
     },
