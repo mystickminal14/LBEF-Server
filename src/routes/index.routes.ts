@@ -25,6 +25,8 @@ import emailRoute from "../api/emails/emal.router";
 import scholarshipRouter from "../api/scholarship/scholarship-router";
 import deptRouter from "../api/teams/department.route";
 import courseCategoryRouter from "../api/course/category/course-category.route";
+import heroSectionImageRouter from "../api/hero-section-image/hero.section.route";
+import faqRouter from "../api/faq/faq.routes";
 
 const rootRouter: Router = Router();
 rootRouter.use("/auth", authRoutes);
@@ -37,6 +39,8 @@ rootRouter.use("/alumni", alumniRouter);
 rootRouter.use("/recognition", recognitionRouter);
 rootRouter.use("/teams", teamRouter);
 rootRouter.use("/dept", deptRouter);
+rootRouter.use("/hero_section_image", heroSectionImageRouter);
+rootRouter.use("/faq", faqRouter);
 
 rootRouter.use("/holiday", holdayRouter);
 rootRouter.use("/downloads", downloadRouter);

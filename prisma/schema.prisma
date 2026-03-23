@@ -26,7 +26,9 @@ enum EPermission {
   COURSES
   TEAMS
   TEAM_DEPT
+  FAQ
   ALUMNI
+  HERO_SECTION
   PLANNER_COURSE
   NEWS
   ALMUNI_FORM
@@ -215,7 +217,28 @@ model Recognition {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+model HeroSectionImage{
+  id         Int         @id @default(autoincrement())
+  thumbnail   String 
+  order      Int
+  status     EStatus
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
+}
+model FAQ{
+  id         Int         @id @default(autoincrement())
+  questions   String 
+  answers   String 
+  parentId Int?
+  parent   FAQ?  @relation("BlockHierarchy", fields: [parentId], references: [id])
+ children FAQ[] @relation("BlockHierarchy")
+  order      Int
+  status     EStatus
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+}
 model TeamDept{
   id         Int         @id @default(autoincrement())
   name       String @unique
@@ -327,6 +350,7 @@ model notice {
 model AdmissionIntake {
   id        Int           @id @default(autoincrement())
   status    EIntakeStatus
+  lastDateStatus EStatus
   intake    String
   duration  String
   lastdate  String

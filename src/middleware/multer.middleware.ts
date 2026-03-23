@@ -16,6 +16,7 @@ const storage = multer.diskStorage({
     if (req.baseUrl.includes("/teams")) folder = "teams";
     if (req.baseUrl.includes("/holiday")) folder = "temp";
     if (req.baseUrl.includes("/connect")) folder = "connect";
+    if (req.baseUrl.includes("/hero_section_image")) folder = "hero";
 
     // ✅ GALLERY → ALWAYS SINGLE FOLDER
     if (req.baseUrl.includes("/gallery")) {

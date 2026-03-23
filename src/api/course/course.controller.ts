@@ -373,7 +373,7 @@ const copyCourse = asyncHandler(async (req: Request, res: Response) => {
   }
 
   await prismaClient.$transaction(async (tx) => {
-    
+    // 1️⃣ Create the new course
     const lastCourse = await tx.course.findFirst({
       orderBy: { order: "desc" },
       select: { order: true },
@@ -391,7 +391,8 @@ const copyCourse = asyncHandler(async (req: Request, res: Response) => {
         duration: sourceCourse.duration,
         degree: sourceCourse.degree,
         prefix: sourceCourse.prefix,
-        fullForm: sourceCourse.fullForm,
+        fullForm: sourceCourse.fullForm ,
+        slug: sourceCourse.slug ? `${sourceCourse.slug}-copy` : undefined,
         details: sourceCourse.details,
         feeStructure: sourceCourse.feeStructure,
         categoryId: sourceCourse.categoryId,
@@ -401,31 +402,50 @@ const copyCourse = asyncHandler(async (req: Request, res: Response) => {
       },
     });
 
-    // -----------------------------
-    // 2️⃣ Copy all detail blocks
-    // -----------------------------
-    const blocks = await tx.courseDetailBlock.findMany({
+    // 2️⃣ Fetch ALL blocks for the source course
+    const allBlocks = await tx.courseDetailBlock.findMany({
       where: { courseId },
       orderBy: { order: "asc" },
     });
 
-    const idMap: Record<number, number> = {};
+    // 3️⃣ Build an in-memory tree grouped by parentId
+    const childrenMap: Record<string, typeof allBlocks> = {};
 
-    for (const block of blocks) {
-      const created = await tx.courseDetailBlock.create({
-        data: {
-          courseId: newCourse.id,
-          parentId: block.parentId ? idMap[block.parentId] : null,
-          title: block.title,
-          category: block.category,
-          content: block.content,
-          type: block.type,
-          order: block.order,
-        },
-      });
-
-      idMap[block.id] = created.id;
+    for (const block of allBlocks) {
+      const key = block.parentId === null ? "root" : String(block.parentId);
+      if (!childrenMap[key]) childrenMap[key] = [];
+      childrenMap[key].push(block);
     }
+
+    // 4️⃣ Recursive insert — parent is always created before its children
+    const insertRecursive = async (
+      originalBlocks: typeof allBlocks,
+      newParentId: number | null
+    ) => {
+      for (const block of originalBlocks) {
+        const created = await tx.courseDetailBlock.create({
+          data: {
+            courseId: newCourse.id,
+            parentId: newParentId,         // ✅ correct resolved parent
+            title: block.title,
+            category: block.category,
+            content: block.content,        // ✅ raw content copied as-is (already stringified for LIST)
+            type: block.type,
+            order: block.order,            // ✅ exact same order preserved
+          },
+        });
+
+        // If this block has children in the source, insert them under the new block
+        const children = childrenMap[String(block.id)];
+        if (children && children.length > 0) {
+          await insertRecursive(children, created.id);
+        }
+      }
+    };
+
+    // 5️⃣ Start from root blocks
+    const rootBlocks = childrenMap["root"] ?? [];
+    await insertRecursive(rootBlocks, null);
   });
 
   res.status(201).json(

@@ -1,9 +1,12 @@
 export enum EPermission {
   USERS = "USERS",
+  FAQ="FAQ",
   COURSES = "COURSES",
   TEAMS = "TEAMS",
   ALUMNI = "ALUMNI",
-
+  HERO_SECTION = "HERO_SECTION",
+  
+  
 
   NEWS = "NEWS",
   JOURNALS = "JOURNALS",
